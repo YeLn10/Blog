@@ -1,3 +1,7 @@
 [华为安装谷歌框架](https://toalan.com/archives/71/ "华为安装谷歌框架")
 
 ipad改日区：电话号码03-xxxxxxxx，番号1010021，其他随意
+
+git按照[这个](https://zhuanlan.zhihu.com/p/193140870 "这个")进行配置。注意git branch -M main改成main分支。同时若是先master上传失败了，重新上又
+
+! [rejected]        main -> main (non-fast-
