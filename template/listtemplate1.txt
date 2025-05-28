@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css\general.css" />
+    <link rel="stylesheet" href="css\list.css" />
+    <title></title>
+</head>
+
+<body>
+    <div class="nav">
+        <img src="img/nav_icon.avif" class="avtar" alt="">
+        <div id="photo">Yeln</div>
+        <div id="home">home</div>
+        <div id="list">list</div>
+        <div id="about">about</div>
+    </div>
+    <div class="container">
+        <div class="container-left">
+            <div class="card">
+                <img src="img/myicon.jpg" class="avtar" alt="">
+                <h3>Yeln</h3>
+                <a href="https://github.com">github 地址</a>
+                <!-- <div class="counter">
+                    <span>文章</span>
+                    <span>分类</span>
+                </div>
+                <div class="counter">
+                    <span>2</span>
+                    <span>1</span>
+                </div> -->
+            </div>
+        </div>
+        <div class="container-right">

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 游戏</title>
+    <link rel="stylesheet" href="css\general.css" />
+    <link rel="stylesheet" href="css\editor.css" />
+    <link rel="stylesheet" href="node_modules\editor.md\css\editormd.min.css" />
+</head>
+
+<body>
+    <div class="nav">
+        <img src="img/nav_icon.avif" class="avtar" alt="">
+        <div id="photo">Yeln</div>
+        <div id="home">主页</div>
+        <div id="list"><a href="list.html">文章</a></div>
+        <div id="about">关于</div>
+    </div>
+    <br><br><br>
+    <div id="completeEditor">
+        <input type="text" placeholder="文章标题" id="titleEditor" value="

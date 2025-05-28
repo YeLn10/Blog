@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="..\css\general.css" />
+    <link rel="stylesheet" href="..\node_modules\highlight.js\styles\docco.css" />
+    <link rel="stylesheet" href="..\css\blogtext.css" />
+    <script src="..\node_modules\marked\marked.min.js"></script>
+    <script src="..\node_modules\jquery\dist\jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <title></title>
+</head>
+
+<body>
+    <div class="nav">
+        <img src="../img/nav_icon.avif" class="avtar" alt="">
+        <div id="photo">Yeln</div>
+        <div id="home">home</div>
+        <div id="list">list</div>
+        <div id="about">about</div>
+    </div>
+    <div class="container">
+        <div class="container-left">
+            <div class="card">
+                <img src="../img/myicon.jpg" class="avtar" alt="">
+                <h3>Yeln</h3>
+                <a href="https://github.com">github 地址</a>
+                <!-- <div class="counter">
+                    <span>文章</span>
+                    <span>分类</span>
+                </div>
+                <div class="counter">
+                    <span>2</span>
+                    <span>1</span>
+                </div> -->
+            </div>
+        </div>
+        <div class="container-right" id="markdownDisplay"></div>
+    </div>
+    <textarea id="markdownTextArea" style="width: 100%; height: 200px;display:none;">
+# asd
+<span style="font-size: 0.4em; color: #888;">2025年03月19日 22:16:10</span>
+
+---
+<br>
+
+### 测试公式
+
+```cpp
+#include<bits/stdc++.h>
+//long double加点精度
+#define double long double
+#define vdb vector<double>
+#define pdb pair<double,double>
+using namespace std;
+const int N=200020;
+const double eps=1e-6;
+
+
+namespace PG
+{
+	vdb div(vdb a,double p,double q)
+	{
+		// for(auto x:a) cout<<x<<" ";cout<<endl;
+		vdb ans;
+		int len=a.size();
+		for(int i=0;i<len-2;i++)
+		{
+			ans.push_back(a[i]);
+			a[i+1]-=a[i]*p;a[i+2]-=a[i]*q;
+		}
+		ans.push_back(a[len-2]);ans.push_back(a[len-1]);
+		return ans;
+	}
+	pdb solve(vdb f)
+	{
+		double u=rand(),v=rand();
+		while(1)
+		{
+			vdb res1=div(f,u,v);
+			// for(auto x:res1) cout<<x<<" ";cout<<endl;
+			double R1=*(res1.end()-2),R2=*(res1.end()-1);//除f(x)
+			// cout<<R1<<" "<<R2<<endl;
+			if(fabs(R1)<eps&&fabs(R2)<eps) break;
+			vdb tmp=res1;tmp.pop_back();tmp.pop_back();tmp.push_back(0);
+			vdb res2=div(tmp,u,v);
+			// for(auto x:res2)cout<<x<<endl;
+			double S1=*(res2.end()-2),S2=*(res2.end()-1);//除xQ(x)
+			// cout<<S1<<" "<<S2<<endl;
+			double T1,T2;
+			if(res2.size()>4) T1=*(res1.end()-4)-*(res2.end()-4)*u-*(res2.end()-5)*v;
+			else if(res2.size()>3) T1=*(res1.end()-4)-*(res2.end()-4)*u-v;
+			else T1=*(res1.end()-4)+u;
+			if(res2.size()>3) T2=*(res1.end()-3)-*(res2.end()-4)*v;
+			else T2=*(res1.end()-3)+v;//除Q(x)
+			double det=(S1*T2-S2*T1);
+			double du=(R1*T2-R2*T1)/det,dv=(S1*R2-S2*R1)/det;//这里是解方程组
+			// cout<<det<<endl;
+			// cout<<S1<<" "<<T1<<" "<<S2<<" "<<T2<<endl;
+			u+=du,v+=dv;
+			// cout<<du<<" "<<dv<<endl;
+		}
+		vdb res1=div(f,u,v);
+		// for(auto x:res1) cout<<x<<" ";cout<<endl;
+		return make_pair(u,v);
+	}
+}//进行一次劈因子
+```
+    </textarea>
+    <div id="markdownDisplay"></div>
+    <script>
+        marked.setOptions({
+            breaks: true,
+        });
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\$', '\$']]  // 同时启用两种标识
+            }
+        };
+        $(function () {
+            console.log(1);
+            var rawMarkdown = document.getElementById('markdownTextArea').value;
+            var processedHTML = marked.parse(rawMarkdown);
+            console.log(processedHTML);
+            document.getElementById('markdownDisplay').innerHTML = processedHTML;
+            // MathJax.typesetPromise([markdownDisplay]).catch((err) => console.error(err));
+            hljs.highlightAll();
+        });
+    </script>
+
+</body>
+
+</html>

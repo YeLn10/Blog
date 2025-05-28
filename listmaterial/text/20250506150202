@@ -1,0 +1,55 @@
+[比赛链接](https://ac.nowcoder.com/acm/contest/33189 "比赛链接")
+
+比较套路的一道题。首先第一个难点是要决定顺序，感觉贪心就像是能解决的样子。实际和P10747差不多，都是交换法贪心，看看答案序列怎么要不会劣，然后可以对原序列排序，然后照着取就可以，这样就解决了顺序。式子也比较好推。
+
+现在问题来到了如何求出选哪些，因为已经确定顺序了。那么肯定要dp，怎么去dp呢？正着dp明显有后效性，因为p会对后面的w产生贡献，那不好搞。但是反着来，已经知道了w，再选的时候就可以没有后效性了，因为p能贡献的已经处理完了。
+
+```cpp
+/*
+「頼むよ神様、こんな人生だったんだ。
+拜托了，神啊，都已经是这样的人生了……
+せめて一度ぐらい、幸せな梦を见させて」
+至少让我做一次幸福的梦吧……
+*/
+#include<bits/stdc++.h>
+#define int long long
+#define mid ((l+r)>>1)
+using namespace std;
+using ll=long long;
+const int mod=1e9+7;
+const int N=200020;
+
+
+
+struct node{
+    long double p,w;
+    friend bool operator<(node a,node b){
+        return a.w+a.p*b.w/10000>b.w+b.p*a.w/10000;
+    }
+}a[N];
+long double f[N][22];
+int n,m;
+void sol()
+{
+    cin>>n>>m;
+    for(int i=1;i<=n;i++)
+        cin>>a[i].w;
+    for(int i=1;i<=n;i++)
+        cin>>a[i].p;
+    sort(a+1,a+1+n);
+    for(int i=n;i;i--)
+        for(int j=1;j<=m;j++)
+            f[i][j]=max(f[i+1][j],f[i+1][j-1]*a[i].p/10000+a[i].w);
+    cout<<fixed<<setprecision(16)<<f[1][m]<<endl;
+}
+signed main()
+{
+    ios::sync_with_stdio(0);
+    cin.tie(0),cout.tie(0);
+
+    int T=1;
+    while(T--) sol();
+    return 0;
+}
+
+```

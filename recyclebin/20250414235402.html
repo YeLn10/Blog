@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="..\css\general.css" />
+    <link rel="stylesheet" href="..\node_modules\highlight.js\styles\docco.css" />
+    <link rel="stylesheet" href="..\css\blogtext.css" />
+    <script src="..\node_modules\marked\marked.min.js"></script>
+    <script src="..\node_modules\jquery\dist\jquery.min.js"></script>
+    <script src="..\node_modules\highlight.js\highlight.min.js"></script>
+    <script id="MathJax-script" async src="..\node_modules\mathjax\es5\tex-mml-chtml.js"></script>
+    <title></title>
+</head>
+
+<body>
+    <div class="nav">
+        <img src="../img/nav_icon.avif" class="avtar" alt="">
+        <div id="photo">Yeln</div>
+        <div id="home"><a href="../home.html">主页</a></div>
+        <div id="list"><a href="../list.html">文章</a></div>
+        <div id="about"><a href="../about.html">关于</a></div>
+    </div>
+    <div class="container">
+        <div class="container-left">
+            <div class="card">
+                <img src="../img/myicon.jpg" class="avtar" alt="">
+                <h3>Yeln</h3>
+                <a href="https://github.com">github 地址</a>
+                <!-- <div class="counter">
+                    <span>文章</span>
+                    <span>分类</span>
+                </div>
+                <div class="counter">
+                    <span>2</span>
+                    <span>1</span>
+                </div> -->
+            </div>
+        </div>
+        <div class="container-right" id="markdownDisplay"></div>
+        <button id="edit">编辑</button>
+        <button id="delete">删除</button>
+    </div>
+    <textarea id="markdownTextArea" style="width: 100%; height: 200px;display:none;">
+
+# CF985G Team Players
+<span style="font-size: 0.4em; color: #888;">2025年04月14日 23:54:02</span>
+
+---
+<br>
+
+非常不错的题目，令我心潮澎湃。
+
+题意是有一些边，连着一些点，然后找所有三元组。
+
+本来想着枚举什么，然后通过奇怪的算贡献正面算的，但是发现必须要容斥，正面总会少情况，各种容斥搞复杂了。不如就最简单的，就是所有$-$一个$+$两个$-..$这种的。
+
+记录 $S_i$ 为前缀和，$a_i$为 $i-1$(这样子可以把下标变为 $[1,n]$)。
+
+一、对于所有的，贡献是
+
+$A\times S_{u-1} \times (n-u)+B\times(u-1)\times(n-u)+C\times(S_n-S_u)\times(u-1)$
+
+二、对于至少有一边的，枚举所有边 $(u,v)$，这是常见套路，这里设 $u\le v$ 。
+
+1.对于 $u$ 之前的
+
+$A\times S_{u-1}+B\times a_u\times (u-1)+C\times a_v \times (u-1)$
+
+2.对于 $u,v$ 之间的(由于未知原因，此处应该是 $S_{v-1}$ 而非 $S_v$ )
+
+$A\times a_u \times (v-u-1)+B\times  (S_v-S_u)+C\times a_v \times (v-u-1)$
+
+3.对于 $v$ 之后的
+
+$A\times a_u \times (n-v)+B\times a_v\times(n-v)+C\times (S_n-S_v)$
+
+三、对于至少有两边的，枚举两边的共同点u，用一个```vector```记录与 $u$ 相连的所有点，这时候我们就可以对其进行操作，用一个```sum[i]```记录下标小于 $i$ 的前缀和，记 $v$ 为下标为$i$ 时的点，$t$为相连的点的个数。
+
+1.当 $v\le u$ 时，记$p$为最后一个小于 $u$ 的点，枚举下标 $i$。
+
+对于 $[1,p]$ 中的点
+
+$A\times(p-i)\times a_v+B\times (sum_p-sum_i)+C\times (p-i)\times a_u$
+
+对于 $[p+1,sz]$ 中的点
+
+$A\times(t-p)\times a_v+B\times (t-p)\times a_u+C\times(sum_t-sum_p)$
+
+2.当$v\ge u$时，枚举下标 $i$。
+
+$A\times(t-i)\times a_u+B\times(t-i)\times a_v+C\times(sum_t-sum_i)$
+
+四、对于至少有三边的，直接无向图三元环计数即可。
+
+重点是想到容斥！而不是在那一直硬算。同时有两边的枚举公共点也很妙，必须要枚举一些共同之处！。
+    </textarea>
+    <div id="markdownDisplay"></div>
+    <span id="edit_index">20250414235402</span>
+    <script>
+        marked.setOptions({
+            breaks: true
+        });
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\$', '\$']]  // 同时启用两种标识
+            }
+        };
+        $(function () {
+            // console.log(1);
+            var rawMarkdown = document.getElementById('markdownTextArea').value;
+            var processedHTML = marked.parse(rawMarkdown);
+            // console.log(processedHTML);
+            document.getElementById('markdownDisplay').innerHTML = processedHTML;
+            hljs.highlightAll();
+            MathJax.typesetPromise([markdownDisplay]).catch((err) => console.error(err));
+        });
+    </script>
+    <script src="..\js\blogtext.js"></script>
+</body>
+
+</html>

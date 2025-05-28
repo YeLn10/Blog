@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="..\css\general.css" />
+    <link rel="stylesheet" href="..\node_modules\highlight.js\styles\docco.css" />
+    <link rel="stylesheet" href="..\css\blogtext.css" />
+    <script src="..\node_modules\marked\marked.min.js"></script>
+    <script src="..\node_modules\jquery\dist\jquery.min.js"></script>
+    <script src="..\node_modules\highlight.js\highlight.min.js"></script>
+    <script id="MathJax-script" async src="..\node_modules\mathjax\es5\tex-mml-chtml.js"></script>
+    <title></title>
+</head>
+
+<body>
+    <div class="nav">
+        <img src="../img/nav_icon.avif" class="avtar" alt="">
+        <div id="photo">Yeln</div>
+        <div id="home"><a href="../home.html">主页</a></div>
+        <div id="list"><a href="../list.html">文章</a></div>
+        <div id="about"><a href="../about.html">关于</a></div>
+    </div>
+    <div class="container">
+        <div class="container-left">
+            <div class="card">
+                <img src="../img/myicon.jpg" class="avtar" alt="">
+                <h3>Yeln</h3>
+                <a href="https://github.com">github 地址</a>
+                <!-- <div class="counter">
+                    <span>文章</span>
+                    <span>分类</span>
+                </div>
+                <div class="counter">
+                    <span>2</span>
+                    <span>1</span>
+                </div> -->
+            </div>
+        </div>
+        <div class="container-right" id="markdownDisplay"></div>
+        <button id="edit">编辑</button>
+        <button id="delete">删除</button>
+    </div>
+    <textarea id="markdownTextArea" style="width: 100%; height: 200px;display:none;">
+
+# 北航大一电设 部分实验记录
+<span style="font-size: 0.4em; color: #888;">2025年05月28日 12:28:30</span>
+
+---
+<br>
+
+个人记录，我估计下学期电设肯定要换实验所以似乎也没有什么借鉴意义。而且AI写的肯定都比我好。
+
+## 双人贪吃蛇
+
+这个是在是做不出两个板子的通信了，怎么Serial1会读自己发出去的东西啊。于是只能有一个led了。
+
+副板子
+```cpp
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH        128 // OLED display width, in pixels
+#define SCREEN_HEIGHT        64 // OLED display height, in pixels
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+#define OLED_RESET            4 // Reset pin # (or -1 if sharing Arduino reset pin)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+const byte leftButtonPin = 2;  // 左转按钮
+const byte rightButtonPin = 3; // 右转按钮
+
+typedef enum {
+  START,
+  RUNNING,
+  GAMEOVER
+} State;
+
+typedef enum {
+    LEFT,
+    UP,
+    RIGHT,
+    DOWN
+} Direction;
+
+#define SNAKE_PIECE_SIZE     3
+#define MAX_SNAKE_LENGTH   165
+#define MAP_SIZE_X          20
+#define MAP_SIZE_Y          20
+#define STARTING_SNAKE_SIZE  5
+#define SNAKE_MOVE_DELAY    30
+#define MAX_PENALTIES        4
+
+State gameState;
+
+int8_t snake1[MAX_SNAKE_LENGTH][2];
+uint8_t snake1_length;
+Direction snake1_dir;
+Direction snake1_newDir;
+int8_t snake1_headX, snake1_headY;
+int penalties1 = 0;
+
+int8_t snake2[MAX_SNAKE_LENGTH][2];
+uint8_t snake2_length;
+Direction snake2_dir;
+int8_t snake2_headX, snake2_headY;
+int penalties2 = 0;
+
+int8_t fruit[2];
+
+
+
+
+bool buttonPress() {
+  return (digitalRead(leftButtonPin) == LOW || digitalRead(rightButtonPin) == LOW);
+}
+
+void readDirection() {
+  if (digitalRead(leftButtonPin) == LOW) {
+    digitalWrite(7,LOW);
+    Serial1.write('L');
+    while (digitalRead(leftButtonPin) == LOW);
+    delay(20);
+    digitalWrite(7,HIGH);
+  }
+  
+  if (digitalRead(rightButtonPin) == LOW) {
+    digitalWrite(7,LOW);
+    Serial1.write('R');
+    while (digitalRead(rightButtonPin) == LOW);
+    delay(20);
+    digitalWrite(7,HIGH);
+  }
+}
+
+
+void drawMap() {
+  int offsetMapX = SCREEN_WIDTH - SNAKE_PIECE_SIZE * MAP_SIZE_X - 2;
+  int offsetMapY = 2;
+
+  display.drawRect(offsetMapX - 2, 0, SNAKE_PIECE_SIZE * MAP_SIZE_X + 4, SNAKE_PIECE_SIZE * MAP_SIZE_Y + 4, SSD1306_WHITE);
+  
+  display.drawRect(fruit[0] * SNAKE_PIECE_SIZE + offsetMapX, fruit[1] * SNAKE_PIECE_SIZE + offsetMapY, 
+                  SNAKE_PIECE_SIZE, SNAKE_PIECE_SIZE, SSD1306_INVERSE);
+  
+  for(int i = 0; i < snake1_length; i++) {
+    display.fillRect(snake1[i][0] * SNAKE_PIECE_SIZE + offsetMapX, snake1[i][1] * SNAKE_PIECE_SIZE + offsetMapY, 
+                    SNAKE_PIECE_SIZE, SNAKE_PIECE_SIZE, SSD1306_WHITE);
+  }
+
+  for(int i = 0; i < snake2_length; i++) {
+    display.drawRect(snake2[i][0] * SNAKE_PIECE_SIZE + offsetMapX, snake2[i][1] * SNAKE_PIECE_SIZE + offsetMapY, 
+                    SNAKE_PIECE_SIZE, SNAKE_PIECE_SIZE, SSD1306_WHITE);
+  }
+}
+
+void drawScore() {
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  
+  // 玩家1分数
+  display.setCursor(2, 2);
+  display.print(F("P1 Score:"));
+  display.print(snake1_length - STARTING_SNAKE_SIZE);
+  display.print(F("  "));
+  display.print(F("Pen:"));
+  display.println(penalties1);
+  
+  // 玩家2分数
+  display.setCursor(2, 12);
+  display.print(F("P2 Score:"));
+  display.print(snake2_length - STARTING_SNAKE_SIZE);
+  display.print(F("  "));
+  display.print(F("Pen:"));
+  display.println(penalties2);
+}
+
+void drawPressToStart() {
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(2, 20);
+  display.print(F("Press a button\nto start the\ngame!"));
+}
+
+void drawGameover() {
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(2, 50);
+  
+  if (penalties1 >= MAX_PENALTIES) {
+    display.println(F("P1 GAME OVER!"));
+  } else if (penalties2 >= MAX_PENALTIES) {
+    display.println(F("P2 GAME OVER!"));
+  } else {
+    display.println(F("GAME OVER!"));
+  }
+}
+
+// 串口通信函数
+char READ()
+{
+  char x=Serial1.read();
+  int buf[1000],tot=0;
+  while(x=='L'||x=='R') {
+    int tmp=x;
+    x=Serial1.read();
+    buf[++tot]=tmp;
+  }
+  for(int i=1;i<=tot;i++) Serial1.write(buf[i]);
+  return x;
+}
+void handleSerialCommunication() {
+  // if (Serial1.available() > 0) {
+  //   char cmd = READ();
+    
+  //   switch (cmd) {
+  //     case 'F': // 水果位置更新
+  //       fruit[0] = READ();
+  //       fruit[1] = READ();
+  //       break;
+        
+  //     case 'U': // 游戏状态更新
+  //       snake2_length = READ();
+  //       snake2_headX = READ();
+  //       snake2_headY = READ();
+  //       snake1_length = READ();
+  //       snake1_headX = READ();
+  //       snake1_headY = READ();
+  //       penalties1 = READ();
+  //       penalties2 = READ();
+  //       gameState = (State)READ();
+        
+  //       // 更新玩家2蛇身体
+  //       for(int i = 1; i < snake2_length; i++) {
+  //         snake2[i][0] = READ();
+  //         snake2[i][1] = READ();
+  //       }
+  //       for(int i = 1; i < snake1_length; i++) {
+  //         snake1[i][0] = READ();
+  //         snake1[i][1] = READ();
+  //       }
+  //       break;
+        
+  //     case 'S': // 游戏状态
+  //       gameState = (State)READ();
+  //       break;
+  //     default :
+  //       Serial1.write(cmd);
+  //   }
+  // }
+}
+
+
+
+void setup() {
+  Serial1.begin(9600,SERIAL_8N1,20,21);
+  Serial.begin(9600); // 用于设备间通信的串口
+  
+  // 确定主从设备 (通过检测引脚状态)
+  pinMode(6, INPUT_PULLUP);
+  pinMode(7,OUTPUT);
+  digitalWrite(7,HIGH);
+
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;);
+  }
+
+  pinMode(leftButtonPin, INPUT_PULLUP);
+  pinMode(rightButtonPin, INPUT_PULLUP);
+  setupGame();
+}
+
+void setupGame() {
+  gameState = RUNNING;
+  
+  
+  display.clearDisplay();
+  drawMap();
+  drawScore();
+  drawPressToStart();
+  display.display();
+}
+
+
+
+int moveTime = 0;
+void loop() {
+  handleSerialCommunication();
+  
+  switch(gameState) {
+    case START:
+      if(buttonPress()) {
+        gameState = RUNNING;
+      }
+      break;
+
+    case RUNNING:
+      moveTime++;
+      readDirection();
+        
+      display.clearDisplay();
+      drawMap();
+      drawScore();
+      display.display();
+        moveTime = 0;
+      break;
+    
+    case GAMEOVER:
+      if(buttonPress()) {
+        delay(500);
+        setupGame();
+        gameState = START;
+      }
+      break;
+  }
+  delay(10);
+}
+```
+
+主板子
+```cpp
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH        128 // OLED display width, in pixels
+#define SCREEN_HEIGHT        64 // OLED display height, in pixels
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+#define OLED_RESET            4 // Reset pin # (or -1 if sharing Arduino reset pin)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+const byte leftButtonPin = 2;  // 左转按钮
+const byte rightButtonPin = 3; // 右转按钮
+
+typedef enum {
+  START,
+  RUNNING,
+  GAMEOVER
+} State;
+
+typedef enum {
+    LEFT,
+    UP,
+    RIGHT,
+    DOWN
+} Direction;
+
+#define SNAKE_PIECE_SIZE     3
+#define MAX_SNAKE_LENGTH   165
+#define MAP_SIZE_X          20
+#define MAP_SIZE_Y          20
+#define STARTING_SNAKE_SIZE  5
+#define SNAKE_MOVE_DELAY    30
+#define MAX_PENALTIES        4
+
+State gameState;
+
+// 玩家1蛇数据 (本地)
+int8_t snake1[MAX_SNAKE_LENGTH][2];
+uint8_t snake1_length;
+Direction snake1_dir;
+Direction snake1_newDir;
+int8_t snake1_headX, snake1_headY;
+int penalties1 = 0;
+
+// 玩家2蛇数据 (远程)
+int8_t snake2[MAX_SNAKE_LENGTH][2];
+uint8_t snake2_length;
+Direction snake2_dir;
+Direction snake2_newDir;
+int8_t snake2_headX, snake2_headY;
+int penalties2 = 0;
+
+int8_t fruit[2];
+bool isMaster = true; // 主设备标志
+
+
+
+bool buttonPress() {
+  return (digitalRead(leftButtonPin) == LOW || digitalRead(rightButtonPin) == LOW);
+}
+char READ()
+{
+  if(!Serial1.available()) return -1;
+  int buf[1000],tot=0;
+  char x=Serial1.read();
+  while(x!='L'&&x!='R') {
+    if(!Serial1.available()) return -1;
+    int tmp=x;
+    x=Serial1.read();
+    buf[++tot]=tmp;
+  }
+  for(int i=1;i<=tot;i++) Serial1.write(buf[i]);
+  return x;
+}
+void readDirection() {
+  if (digitalRead(leftButtonPin) == LOW) {
+    snake1_newDir = (Direction)(((int)snake1_dir + 3) % 4);
+    while (digitalRead(leftButtonPin) == LOW);
+    delay(20);
+  }
+  
+  if (digitalRead(rightButtonPin) == LOW) {
+    snake1_newDir = (Direction)(((int)snake1_dir + 1) % 4);
+    while (digitalRead(rightButtonPin) == LOW);
+    delay(20);
+  }
+
+  if(Serial1.available()) {
+    digitalWrite(7,LOW);
+    //delay(1000);
+    char cmd=READ();
+    if(cmd=='L'){
+       snake2_newDir = (Direction)(((int)snake2_dir + 3) % 4);
+    //while (digitalRead(leftButtonPin) == LOW);
+    }
+    else if(cmd=='R'){
+       snake2_newDir = (Direction)(((int)snake2_dir + 1) % 4);
+    }
+    else ;
+    //while (digitalRead(leftButtonPin) == LOW);
+    delay(5);
+  }
+}
+bool moveSnake1() {
+  int8_t x = snake1[0][0];
+  int8_t y = snake1[0][1];
+
+  switch(snake1_dir) {
+    case LEFT: x -= 1; break;
+    case UP: y -= 1; break;
+    case RIGHT: x += 1; break;
+    case DOWN: y += 1; break;
+  }
+
+  bool collision = false;
+  if (checkCollision(x, y, snake1, snake1_length)) {
+    penalties1++;
+    if (penalties1 >= MAX_PENALTIES) {
+      gameState = GAMEOVER;
+      collision = true;
+    } else {
+      // 重置蛇位置但保持长度
+      resetSnake1();
+    }
+  } else {
+    // 正常移动
+    for(int i = snake1_length - 1; i > 0; i--) {
+      snake1[i][0] = snake1[i - 1][0];
+      snake1[i][1] = snake1[i - 1][1];
+    }
+    snake1[0][0] = x;
+    snake1[0][1] = y;
+    snake1_headX = x;
+    snake1_headY = y;
+  }
+  
+  return collision;
+}
+
+bool moveSnake2() {
+  int8_t x = snake2[0][0];
+  int8_t y = snake2[0][1];
+
+  switch(snake2_dir) {
+    case LEFT: x -= 1; break;
+    case UP: y -= 1; break;
+    case RIGHT: x += 1; break;
+    case DOWN: y += 1; break;
+  }
+
+  bool collision = false;
+  if (checkCollision(x, y, snake2, snake2_length)) {
+    penalties2++;
+    if (penalties2 >= MAX_PENALTIES) {
+      gameState = GAMEOVER;
+      collision = true;
+    } else {
+      // 重置蛇位置但保持长度
+      resetSnake2();
+    }
+  } else {
+    // 正常移动
+    for(int i = snake2_length - 1; i > 0; i--) {
+      snake2[i][0] = snake2[i - 1][0];
+      snake2[i][1] = snake2[i - 1][1];
+    }
+    snake2[0][0] = x;
+    snake2[0][1] = y;
+    snake2_headX = x;
+    snake2_headY = y;
+  }
+  
+  return collision;
+}
+
+bool checkCollision(int8_t x, int8_t y, int8_t snake[][2], uint8_t length) {
+  // 检查边界碰撞
+  if(x < 0 || y < 0 || x >= MAP_SIZE_X || y >= MAP_SIZE_Y) return true;
+  
+  // 检查自身碰撞
+  for(int i = 1; i < length; i++) {
+    if(x == snake[i][0] && y == snake[i][1]) return true;
+  }
+  
+  // 检查与另一条蛇的碰撞
+  if (snake == snake1) {
+    // 玩家1检查与玩家2的碰撞
+    for(int i = 0; i < snake2_length; i++) {
+      if(x == snake2[i][0] && y == snake2[i][1]) return true;
+    }
+  } else {
+    // 玩家2检查与玩家1的碰撞
+    for(int i = 0; i < snake1_length; i++) {
+      if(x == snake1[i][0] && y == snake1[i][1]) return true;
+    }
+  }
+  
+  return false;
+}
+
+bool checkFruit() {
+  bool eaten = false;
+  
+  // 检查玩家1是否吃到水果
+  if(fruit[0] == snake1[0][0] && fruit[1] == snake1[0][1]) {
+    if(snake1_length + 1 <= MAX_SNAKE_LENGTH)
+      snake1_length++;
+    eaten = true;
+  }
+  
+  // 检查玩家2是否吃到水果
+  if(fruit[0] == snake2[0][0] && fruit[1] == snake2[0][1]) {
+    if(snake2_length + 1 <= MAX_SNAKE_LENGTH)
+      snake2_length++;
+    eaten = true;
+  }
+  
+  // 如果水果被吃掉，生成新水果
+  if (eaten) {
+    generateFruit();
+  }
+  
+  return eaten;
+}
+
+void generateFruit() {
+  bool validPosition = false;
+  while (!validPosition) {
+    fruit[0] = random(0, MAP_SIZE_X);
+    fruit[1] = random(0, MAP_SIZE_Y);
+    
+    validPosition = true;
+    // 检查水果是否在玩家1蛇身上
+    for(int i = 0; i < snake1_length; i++) {
+      if(fruit[0] == snake1[i][0] && fruit[1] == snake1[i][1]) {
+        validPosition = false;
+        break;
+      }
+    }
+    
+    // 检查水果是否在玩家2蛇身上
+    if (validPosition) {
+      for(int i = 0; i < snake2_length; i++) {
+        if(fruit[0] == snake2[i][0] && fruit[1] == snake2[i][1]) {
+          validPosition = false;
+          break;
+        }
+      }
+    }
+  }
+}
+
+void drawMap() {
+  int offsetMapX = SCREEN_WIDTH - SNAKE_PIECE_SIZE * MAP_SIZE_X - 2;
+  int offsetMapY = 2;
+
+  // 绘制边界
+  display.drawRect(offsetMapX - 2, 0, SNAKE_PIECE_SIZE * MAP_SIZE_X + 4, SNAKE_PIECE_SIZE * MAP_SIZE_Y + 4, SSD1306_WHITE);
+  
+  // 绘制水果
+  display.drawRect(fruit[0] * SNAKE_PIECE_SIZE + offsetMapX, fruit[1] * SNAKE_PIECE_SIZE + offsetMapY, 
+                  SNAKE_PIECE_SIZE, SNAKE_PIECE_SIZE, SSD1306_INVERSE);
+  
+  // 绘制玩家1蛇 (用实心方块)
+  for(int i = 0; i < snake1_length; i++) {
+    display.fillRect(snake1[i][0] * SNAKE_PIECE_SIZE + offsetMapX, snake1[i][1] * SNAKE_PIECE_SIZE + offsetMapY, 
+                    SNAKE_PIECE_SIZE, SNAKE_PIECE_SIZE, SSD1306_WHITE);
+  }
+  
+  // 绘制玩家2蛇 (用空心方块)
+  for(int i = 0; i < snake2_length; i++) {
+    display.drawRect(snake2[i][0] * SNAKE_PIECE_SIZE + offsetMapX, snake2[i][1] * SNAKE_PIECE_SIZE + offsetMapY, 
+                    SNAKE_PIECE_SIZE, SNAKE_PIECE_SIZE, SSD1306_WHITE);
+  }
+}
+
+void drawScore() {
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  
+  // 玩家1分数
+  display.setCursor(2, 2);
+  display.print(F("P1 Score:"));
+  display.print(snake1_length - STARTING_SNAKE_SIZE);
+  display.print(F("  "));
+  display.print(F("Pen:"));
+  display.println(penalties1);
+  
+  // 玩家2分数
+  display.setCursor(2, 12);
+  display.print(F("P2 Score:"));
+  display.print(snake2_length - STARTING_SNAKE_SIZE);
+  display.print(F("  "));
+  display.print(F("Pen:"));
+  display.println(penalties2);
+}
+
+void drawPressToStart() {
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(2, 20);
+  display.print(F("Press a button\nto start the\ngame!"));
+}
+
+void drawGameover() {
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(2, 50);
+  
+  if (penalties1 >= MAX_PENALTIES) {
+    display.println(F("P1 GAME OVER!"));
+  } else if (penalties2 >= MAX_PENALTIES) {
+    display.println(F("P2 GAME OVER!"));
+  } else {
+    display.println(F("GAME OVER!"));
+  }
+}
+
+// 串口通信函数
+void handleSerialCommunication() {
+  if (Serial1.available() > 0) {
+    
+  }
+}
+
+void sendFruitPosition() {
+  Serial1.write('F');
+  Serial1.write(fruit[0]);
+  Serial1.write(fruit[1]);
+}
+
+// void sendDirection() {
+//   Serial1.write('D');
+//   Serial1.write(snake1_dir);
+// }
+
+void sendGameUpdate(bool collision1, bool collision2, bool fruitEaten) {
+  // Serial1.write('U');
+  // Serial1.write(snake2_length);
+  // Serial1.write(snake2_headX);
+  // Serial1.write(snake2_headY);
+  // Serial1.write(snake1_length);
+  // Serial1.write(snake1_headX);
+  // Serial1.write(snake1_headY);
+  // Serial1.write(penalties1);
+  // Serial1.write(penalties2);
+  // Serial1.write(gameState);
+  
+  // // 发送玩家2蛇身体
+  // for(int i = 1; i < snake2_length; i++) {
+  //   Serial1.write(snake2[i][0]);
+  //   Serial1.write(snake2[i][1]);
+
+  // }
+  // for(int i = 1; i < snake1_length; i++) {
+  //   Serial1.write(snake1[i][0]);
+  //   Serial1.write(snake1[i][1]);
+    
+  // }
+  // // 如果水果被吃了，发送新水果位置
+  // if (fruitEaten) {
+  //   sendFruitPosition();
+  // }
+}
+
+void sendGameState() {
+  Serial1.write('S');
+  Serial1.write(gameState);
+}
+
+bool buttonReceive() {
+
+}
+void setupGame() {
+  gameState = START;
+  
+  // 初始化玩家1(本地)蛇
+  snake1_dir = RIGHT;
+  snake1_newDir = RIGHT;
+  resetSnake1();
+  
+  // 初始化玩家2(远程)蛇
+  snake2_dir = LEFT;
+  snake2_newDir = LEFT;
+  resetSnake2();
+  
+  // 只有主设备生成水果
+  if (isMaster) {
+    generateFruit();
+    sendFruitPosition();
+  }
+  
+  display.clearDisplay();
+  drawMap();
+  drawScore();
+  drawPressToStart();
+  display.display();
+}
+
+void resetSnake1() {
+  snake1_length = STARTING_SNAKE_SIZE;
+  for(int i = 0; i < snake1_length; i++) {
+    snake1[i][0] = MAP_SIZE_X / 4 - i;
+    snake1[i][1] = MAP_SIZE_Y / 2;
+  }
+  snake1_headX = snake1[0][0];
+  snake1_headY = snake1[0][1];
+}
+
+void resetSnake2() {
+  snake2_length = STARTING_SNAKE_SIZE;
+  for(int i = 0; i < snake2_length; i++) {
+    snake2[i][0] = MAP_SIZE_X * 3 / 4 + i;
+    snake2[i][1] = MAP_SIZE_Y / 2;
+  }
+  snake2_headX = snake2[0][0];
+  snake2_headY = snake2[0][1];
+}
+
+int moveTime = 0;
+void setup() {
+  pinMode(7,OUTPUT);
+  Serial.begin(9600);
+  Serial1.begin(9600,SERIAL_8N1,20,21); // 用于设备间通信的串口
+
+  
+  // 确定主从设备 (通过检测引脚状态)
+  //pinMode(6, INPUT_PULLUP);
+  //isMaster = (digitalRead(6) == HIGH);
+
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;);
+  }
+
+  pinMode(leftButtonPin, INPUT_PULLUP);
+  pinMode(rightButtonPin, INPUT_PULLUP);
+
+  randomSeed(analogRead(A0));
+
+  setupGame();
+  digitalWrite(7,HIGH);
+}
+void loop() {
+  handleSerialCommunication();
+  
+  switch(gameState) {
+    case START:
+      if(buttonPress()) {
+
+        gameState = RUNNING;
+        if (isMaster) sendGameState();
+      }
+      break;
+
+    case RUNNING:
+      moveTime++;
+      readDirection();
+      
+      if(moveTime >= SNAKE_MOVE_DELAY) {
+        snake1_dir = snake1_newDir;
+        snake2_dir = snake2_newDir;
+        // 移动玩家1蛇
+        bool collision1 = moveSnake1();
+        
+        // 只有主设备移动玩家2蛇并检查水果
+        if (isMaster) {
+          bool collision2 = moveSnake2();
+          
+          // 检查水果碰撞
+          bool fruitEaten = checkFruit();
+          
+          // 发送更新
+          sendGameUpdate(collision1, collision2, fruitEaten);
+        }
+        
+        display.clearDisplay();
+        drawMap();
+        drawScore();
+        display.display();
+        moveTime = 0;
+      }
+      break;
+    
+    case GAMEOVER:
+      if(buttonPress()) {
+        delay(500);
+        setupGame();
+        gameState = START;
+        if (isMaster) sendGameState();
+      }
+      break;
+  }
+  
+  delay(10);
+}
+```
+
+
+## 双声道发声
+
+```cpp
+//------------------------------------------------------------------------------------------------------------------------
+// Play a WAV file from memory, stored in the File called WavData.h within this directory
+// The WAV must be 16bit samples and stereo, any sample rate supported
+// Will display the wav file stats to serial before playing
+//
+// Boring copyright/usage information:
+//    (c) XTronical, www.xtronical.com
+//    Use as you wish for personal or monatary gain, or to rule the world (if that sort of thing spins your bottle)
+//    However you use it, no warrenty is provided etc. etc. It is not listed as fit for any purpose you perceive
+//    It may damage your house, steal your lover, drink your beers and more.
+//    
+// For more information and wiring for the specific chips mentioned please visit:
+//    http://www.xtronical.com/I2SAudio
+//
+//------------------------------------------------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------------------------------------------------
+// Includes
+    #include "driver/i2s.h"                       // Library of I2S routines, comes with ESP32 standard install
+    #include "WavData1.h"
+    #include "WavData2.h"                        // The Wav file stored in memory, should be in folder with this file
+    #include "WavData.h"  
+//------------------------------------------------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------------------------------------------------
+//  Global Variables/objects    
+    static const i2s_port_t i2s_num = I2S_NUM_0;  // i2s port number
+    unsigned const char* TheData;
+    unsigned const char* tmpD1;
+    unsigned const char* leftData;
+    unsigned const char* rightData;
+    uint32_t DataIdx=0;                           // index offset into "TheData" for current  data t send to I2S
+    uint32_t leftDataIdx = 0;
+    uint32_t rightDataIdx = 0;
+    struct WavHeader_Struct
+    {
+      //   RIFF Section    
+      char RIFFSectionID[4];      // Letters "RIFF"
+      uint32_t Size;              // Size of entire file less 8
+      char RiffFormat[4];         // Letters "WAVE"
+      
+      //   Format Section    
+      char FormatSectionID[4];    // letters "fmt"
+      uint32_t FormatSize;        // Size of format section less 8
+      uint16_t FormatID;          // 1=uncompressed PCM
+      uint16_t NumChannels;       // 1=mono,2=stereo
+      uint32_t SampleRate;        // 44100, 16000, 8000 etc.
+      uint32_t ByteRate;          // =SampleRate * Channels * (BitsPerSample/8)
+      uint16_t BlockAlign;        // =Channels * (BitsPerSample/8)
+      uint16_t BitsPerSample;     // 8,16,24 or 32
+    
+      // Data Section
+      char DataSectionID[4];      // The letters "data"
+      uint32_t DataSize;          // Size of the data that follows
+    }WavHeaderG;
+    WavHeader_Struct WavHeader[3];
+//------------------------------------------------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------------------------------------------------
+// I2S configuration structures
+
+static const i2s_config_t i2s_config = {
+    .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
+    .sample_rate = 44100,                            // Note, this will be changed later
+    .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+    .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+    .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
+    .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,       // high interrupt priority
+    .dma_buf_count = 8,                             // 8 buffers
+    .dma_buf_len = 1024,                            // 1K per buffer, so 8K of buffer space
+    .use_apll=0,
+    .tx_desc_auto_clear= true, 
+    .fixed_mclk=-1    
+};
+
+// These are the physical wiring connections to our I2S decoder board/chip from the esp32, there are other connections
+// required for the chips mentioned at the top (but not to the ESP32), please visit the page mentioned at the top for
+// further information regarding these other connections.
+
+static const i2s_pin_config_t pin_config = {
+    .bck_io_num = 2,                                 // The bit clock connectiom, goes to pin 27 of ESP32
+    .ws_io_num = 3,                                  // Word select, also known as word select or left right clock
+    .data_out_num = 1,                               // Data out from the ESP32, connect to DIN on 38357A
+    .data_in_num = I2S_PIN_NO_CHANGE                  // we are not interested in I2S data into the ESP32
+};
+
+//------------------------------------------------------------------------------------------------------------------------
+bool ValidWavData(WavHeader_Struct* Wav)
+{
+  
+  if(memcmp(Wav->RIFFSectionID,"RIFF",4)!=0) 
+  {    
+    Serial.print("Invlaid data - Not RIFF format");
+    return false;        
+  }
+  if(memcmp(Wav->RiffFormat,"WAVE",4)!=0)
+  {
+    Serial.print("Invlaid data - Not Wave file");
+    return false;           
+  }
+  if(memcmp(Wav->FormatSectionID,"fmt",3)!=0) 
+  {
+    Serial.print("Invlaid data - No format section found");
+    return false;       
+  }
+  if(memcmp(Wav->DataSectionID,"data",4)!=0) 
+  {
+    Serial.print("Invlaid data - data section not found");
+    return false;      
+  }
+  if(Wav->FormatID!=1) 
+  {
+    Serial.print("Invlaid data - format Id must be 1");
+    return false;                          
+  }
+  if(Wav->FormatSize!=16) 
+  {
+    Serial.print("Invlaid data - format section size must be 16.");
+    return false;                          
+  }
+  if((Wav->NumChannels!=1)&(Wav->NumChannels!=2))
+  {
+    Serial.print("Invlaid data - only mono or stereo permitted.");
+    return false;   
+  }
+  if(Wav->SampleRate>48000) 
+  {
+    Serial.print("Invlaid data - Sample rate cannot be greater than 48000");
+    return false;                       
+  }
+  if((Wav->BitsPerSample!=8)& (Wav->BitsPerSample!=16)) 
+  {
+    Serial.print("Invlaid data - Only 8 or 16 bits per sample permitted.");
+    return false;                        
+  }
+  return true;
+}
+
+
+void DumpWAVHeader(WavHeader_Struct* Wav)
+{
+  if(memcmp(Wav->RIFFSectionID,"RIFF",4)!=0)
+  {
+    Serial.print("Not a RIFF format file - ");    
+    PrintData(Wav->RIFFSectionID,4);
+    return;
+  } 
+  if(memcmp(Wav->RiffFormat,"WAVE",4)!=0)
+  {
+    Serial.print("Not a WAVE file - ");  
+    PrintData(Wav->RiffFormat,4);  
+    return;
+  }  
+  if(memcmp(Wav->FormatSectionID,"fmt",3)!=0)
+  {
+    Serial.print("fmt ID not present - ");
+    PrintData(Wav->FormatSectionID,3);      
+    return;
+  } 
+  if(memcmp(Wav->DataSectionID,"data",4)!=0)
+  {
+    Serial.print("data ID not present - "); 
+    PrintData(Wav->DataSectionID,4);
+    return;
+  }  
+  // All looks good, dump the data
+  Serial.print("Total size :");Serial.println(Wav->Size);
+  Serial.print("Format section size :");Serial.println(Wav->FormatSize);
+  Serial.print("Wave format :");Serial.println(Wav->FormatID);
+  Serial.print("Channels :");Serial.println(Wav->NumChannels);
+  Serial.print("Sample Rate :");Serial.println(Wav->SampleRate);
+  Serial.print("Byte Rate :");Serial.println(Wav->ByteRate);
+  Serial.print("Block Align :");Serial.println(Wav->BlockAlign);
+  Serial.print("Bits Per Sample :");Serial.println(Wav->BitsPerSample);
+  Serial.print("Data Size :");Serial.println(Wav->DataSize);
+}
+
+void PrintData(const char* Data,uint8_t NumBytes)
+{
+    for(uint8_t i=0;i<NumBytes;i++)
+      Serial.print(Data[i]); 
+      Serial.println();  
+}
+// 从WAV数据中获取一个16位样本
+int16_t getSample(const unsigned char* data, uint32_t* idx, const WavHeader_Struct* header) {
+    if (!data || *idx >= header->DataSize) {
+        *idx = 0;  // 循环播放
+        return 0;
+    }
+    
+    int16_t sample = 0;
+    if (header->BitsPerSample == 16) {
+        // 16位样本
+        sample = (int16_t)(data[*idx] | (data[*idx + 1] << 8));
+        *idx += 2;
+    } else {
+        // 8位样本转换为16位
+        sample = ((int16_t)data[*idx] - 128) << 8;
+        *idx += 1;
+    }
+    
+    return sample;
+}
+int16_t merge[40020];
+int flag=0,mergeSize=20000;
+void setMusic2(int a,int b)
+{
+  if(a==1) leftData=WavData;
+  else if(a==2) leftData=WavData2;
+  else if(a==3) leftData=WavData3;
+  if(b==1) rightData=WavData;
+  else if(b==2) rightData=WavData2;
+  else if(b==3) rightData=WavData3;
+}
+void setMusic(int x) {
+  if(x==1) {
+    memcpy(&WavHeaderG,&WavData,44);                     // Copy the header part of the wav data into our structure
+    DumpWAVHeader(&WavHeaderG);                          // Dump the header data to serial, optional!
+    if(ValidWavData(&WavHeaderG))
+    {
+      TheData=WavData;                                          // set to start of data  
+      TheData+=44;                       
+    }  
+  }
+  else if(x==2) {
+    memcpy(&WavHeaderG,&WavData2,44);                     // Copy the header part of the wav data into our structure
+    DumpWAVHeader(&WavHeaderG);                          // Dump the header data to serial, optional!
+    if(ValidWavData(&WavHeaderG))
+    {
+      TheData=WavData2;                                          // set to start of data  
+      TheData+=44;                       
+    }  
+  }
+  else {
+    memcpy(&WavHeaderG,&WavData3,44);                     // Copy the header part of the wav data into our structure
+    DumpWAVHeader(&WavHeaderG);                          // Dump the header data to serial, optional!
+    if(ValidWavData(&WavHeaderG))
+    {
+      TheData=WavData3;                                          // set to start of data  
+      TheData+=44;                       
+    }  
+  }
+}
+void setup() {
+    i2s_driver_install(i2s_num, &i2s_config, 0, NULL);        // ESP32 will allocated resources to run I2S
+    i2s_set_pin(i2s_num, &pin_config);                        // Tell it the pins you will be using
+    i2s_set_sample_rates(i2s_num, 44100);      //set sample rate 
+    Serial.begin(115200);
+    setMusic(1);
+    memcpy(&WavHeader[0], &WavData, 44);
+    if (!ValidWavData(&WavHeader[0])) {
+        Serial.println("WavData is invalid!");
+        while (true);
+    }
+    memcpy(&WavHeader[1], &WavData2, 44);
+    if (!ValidWavData(&WavHeader[1])) {
+        Serial.println("Music2Data is invalid!");
+        while (true);
+    }
+    memcpy(&WavHeader[2], &WavData3, 44);
+    if (!ValidWavData(&WavHeader[2])) {
+        Serial.println("Music3Data is invalid!");
+        while (true);
+    }
+}
+
+void loop()
+{    
+  if(Serial.available()>0) {
+    String input=Serial.readString();
+    input.trim();
+    if(input.length()==1) {
+      if(input=="1") 
+        setMusic(1),Serial.println("Change to 1");
+      else if(input=="2")
+        setMusic(2),Serial.println("Change to 2");
+      else
+        setMusic(3),Serial.println("Change to 3");
+      flag=0;
+    }
+    else {
+      int a,b;
+      if(input[0]=='1') 
+        a=1,Serial.println("F Change to 1");
+      else if(input[0]=='2')
+        a=2,Serial.println("F Change to 2");
+      else
+        a=3,Serial.println("F Change to 3");
+      if(input[1]=='1') 
+        b=1,Serial.println("S Add to 1");
+      else if(input[1]=='2')
+        b=2,Serial.println("S Add to 2");
+      else
+        b=3,Serial.println("S Add to 3");
+        flag=1;
+        setMusic2(a,b);
+    }
+  }                          
+  size_t BytesWritten;                            // Returned by the I2S write routine, we are not interested in it
+
+  // As the WAV data for this example is in form of two 16 bit signed values we can send each four bytes direct to I2S
+  if(flag==0)
+    i2s_write(i2s_num,TheData+DataIdx,4*2,&BytesWritten,portMAX_DELAY); 
+  else {
+    const int BUFFER_SIZE = 512;  // 样本数（左右声道各占一个样本）
+    int16_t i2sBuffer[BUFFER_SIZE * 2];  // 双声道缓冲区
+    
+    // 填充缓冲区
+    for (int i = 0; i < BUFFER_SIZE; i++) {
+        int16_t leftSample = 0;
+        int16_t rightSample = 0;
+        
+        // 获取左声道样本
+        if (leftData) {
+            leftSample = getSample(leftData, &leftDataIdx, &WavHeader[(leftData == WavData)? 0 : (leftData == WavData2)? 1 : 2]);
+        }
+        
+        // 获取右声道样本
+        if (rightData) {
+            rightSample = getSample(rightData, &rightDataIdx, &WavHeader[(rightData == WavData)? 0 : (rightData == WavData2)? 1 : 2]);
+        }
+        
+        // 填充缓冲区（左右声道交替）
+        i2sBuffer[i * 2] = leftSample;      // 左声道
+        i2sBuffer[i * 2 + 1] = rightSample;  // 右声道
+    }
+    i2s_write(i2s_num,i2sBuffer,BUFFER_SIZE*4,&BytesWritten,portMAX_DELAY);    
+  }
+  DataIdx+=4;
+  if(DataIdx>=WavHeaderG.DataSize) DataIdx=0;;                          
+}
+
+```
+
+
+## 大作业(智能(?)录音)
+
+难点在于做一个匹配准确的模板
+
+```cpp
+#include "Arduino.h"
+#include "Coeffs.h"
+#include "driver/i2s.h"  // Library of I2S routines, comes with ESP32 standard install
+#include "A.h" //include WavDataA
+#include "B.h" //include WavDataB
+#include "C.h" // The Wav file stored in memory, should be in folder with this file
+#include "Templates.h" //DIFFICULT!!
+#define IN 0
+
+static const i2s_port_t i2s_num = I2S_NUM_0;  // i2s port number
+unsigned const char* TheData;
+uint32_t DataIdx = 0;  // index offset into "TheData" for current  data t send to I2S
+size_t BytesWritten;
+
+struct WavHeader_Struct {
+  //   RIFF Section
+  char RIFFSectionID[4];  // Letters "RIFF"
+  uint32_t Size;          // Size of entire file less 8
+  char RiffFormat[4];     // Letters "WAVE"
+  //   Format Section
+  char FormatSectionID[4];  // letters "fmt"
+  uint32_t FormatSize;      // Size of format section less 8
+  uint16_t FormatID;        // 1=uncompressed PCM
+  uint16_t NumChannels;     // 1=mono,2=stereo
+  uint32_t SampleRate;      // 44100, 16000, 8000 etc.
+  uint32_t ByteRate;        // =SampleRate * Channels * (BitsPerSample/8)
+  uint16_t BlockAlign;      // =Channels * (BitsPerSample/8)
+  uint16_t BitsPerSample;   // 8,16,24 or 32
+
+  // Data Section
+  char DataSectionID[4];  // The letters "data"
+  uint32_t DataSize;      // Size of the data that follows
+} WavHeader[3];
+static const i2s_config_t i2s_config = {
+  .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
+  .sample_rate = 8000,  // Note, this will be changed later
+  .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+  .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
+  .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
+  .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,  // high interrupt priority
+  .dma_buf_count = 8,                        // 8 buffers
+  .dma_buf_len = 1024,                       // 1K per buffer, so 8K of buffer space
+  .use_apll = 0,
+  .tx_desc_auto_clear = true,
+  .fixed_mclk = -1
+};
+static const i2s_pin_config_t pin_config = {
+  .bck_io_num = 2,                  // The bit clock connectiom, goes to pin 27 of ESP32
+  .ws_io_num = 3,                   // Word select, also known as word select or left right clock
+  .data_out_num = 1,                // Data out from the ESP32, connect to DIN on 38357A
+  .data_in_num = I2S_PIN_NO_CHANGE  // we are not interested in I2S data into the ESP32
+};
+void init() {
+  i2s_driver_install(i2s_num, &i2s_config, 0, NULL);  // ESP32 will allocated resources to run I2S
+  i2s_set_pin(i2s_num, &pin_config);                  // Tell it the pins you will be using
+  i2s_set_sample_rates(i2s_num, 8000);                //set sample rate
+}
+
+
+
+
+
+
+
+const byte NumSegments = 13; //分段数量
+const byte SegmentSize = 50; //分段持续时间，单位mS
+const byte hyster = 2; //
+
+const byte sample_interval = 125;  //采样时间间隔125us，即采样率8kHz
+const byte scale = 4;              //幅度缩放因子
+const byte thresh = 100;            //音量门限
+const int sample_length = 8000;    //采集8000个样本，1秒时间长度
+
+bool Collecting = false;
+int adcValue = 0;
+short curData[sample_length];
+int curSample = 7999;
+int CurBandData[NumSegments][nBand + 1]; // 频带特征数据
+
+bool ADCfast(void) {
+  for(int i=1;i<=1;i++) Serial.println("Start");
+  static int zero = 580;
+  static unsigned long prevTime;
+  long val = 0;
+  Collecting = false;
+
+  while (1) {
+    prevTime = micros();
+    adcValue = analogRead(IN);  // 读取模拟信号
+    val = adcValue / scale;  // 将ADC采样值进行尺度缩放
+    // 去除直流偏置值
+    if (val < zero)
+      zero--;
+    else
+      zero++;
+    val = val - zero;
+
+    if (abs(val) > thresh) {
+      Collecting = true;
+      break;
+    }
+    while (micros() - prevTime < sample_interval);
+  }
+  for (curSample = 0; curSample < sample_length; curSample++) {
+    prevTime = micros();
+    adcValue = analogRead(IN);
+
+    val = adcValue / scale;
+
+    //去除直流偏置值
+    if (val < zero)
+      zero--;
+    else
+      zero++;
+
+    val = val - zero;
+
+    curData[curSample] = val;
+    while (micros() - prevTime < sample_interval);  //等待下一次采样
+  }
+  return Collecting;
+}
+//-------------------------------------------------------------------------
+// 提取频带数据
+//-------------------------------------------------------------------------
+bool PollBands(bool init)
+{
+  bool IsPos;
+  static unsigned long segmentTime, prevTime;
+  byte band, seg, val1, val2;
+  static int zero = 500;
+  static byte curSegment = 255;
+  long val;
+  word zcr;
+  static int valmax[10];
+  static int pd[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  static int ppd[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+  if (init)  //局部变量初始化
+  {
+    memset(pd, 0, sizeof(pd));
+    memset(ppd, 0, sizeof(ppd));
+    memset(CurBandData, 0, sizeof(CurBandData));
+    return false;
+  }
+
+  val = 0;
+  IsPos = true;
+
+  if (Collecting == true) {
+    for (curSegment = 0; curSegment < NumSegments; curSegment++) {
+      zcr = 0;
+      memset(valmax, 0, sizeof(valmax));
+
+
+      for (curSample=0;curSample<SegmentSize*1000/sample_interval;curSample++) {
+        val = curData[curSample+curSegment*SegmentSize*1000/sample_interval];
+        // 过零率统计
+        if (IsPos)
+        {
+          if (val < -hyster)
+          {
+            IsPos = false;
+            zcr++;
+          }
+        } else {
+          if (val > +hyster)
+          {
+            IsPos = true;
+            zcr++;
+          }
+        }
+
+        for (band = 0; band < nBand; band++)
+        {
+          // 滤波器实现
+          int L1, L2;
+          L1 =  ((-(filt_b1[band]) * pd[band] - filt_b2[band] * ppd[band]) >> 16) + val;
+          L2 = (filt_a0[band] * L1 - filt_a0[band] * ppd[band]) >> 16;
+          ppd[band] = pd[band];
+          pd[band] = L1;
+          if (abs(L2) > valmax[band])
+            valmax[band]++;
+        }
+
+      }
+
+      for (band = 0; band < nBand; band++)
+        CurBandData[curSegment][band + 1] = valmax[band];
+      CurBandData[curSegment][0] = zcr;
+    }
+  }
+
+  return Collecting;
+}
+
+//-----------------------------------------------------------------------------
+// 分析语义
+//-----------------------------------------------------------------------------
+int AnalyseUtterance(int Utterance[nSegments][nBand+1]) {
+  int i,dist;  
+  i = FindBestUtterance(Utterance,&dist);
+  return i;
+}
+
+//-----------------------------------------------------------------------------
+// PrintCurBandData
+//-----------------------------------------------------------------------------
+void PrintCurBandData(void)
+{
+  byte seg, band;
+
+  Serial.println("a");
+  for (seg = 0; seg < nSegments; seg++) {
+    for (band = 0; band <= nBand; band++) {
+      Serial.print(CurBandData[seg][band]);
+      Serial.print(" ");
+    }
+    Serial.println("");
+  }
+}
+
+//-----------------------------------------------------------------------------
+// SendUtterance
+//-----------------------------------------------------------------------------
+void SendUtterance(int Utterance[nSegments][nBand+1])
+{
+  byte seg,band;
+  for (seg = 0; seg < nSegments; seg++) {
+    for (band = 0; band <= nBand; band++) {
+      Serial.print(Utterance[seg][band]);
+      Serial.print(" ");
+    }
+    Serial.println("");
+  }
+}
+
+//-----------------------------------------------------------------------------
+// ShiftedDistance
+//   distance from Utterance shifted by shift
+//   to Templates[TemplateUtt]
+//-----------------------------------------------------------------------------
+
+int ShiftedDistance(int Utterance[nSegments][nBand+1], byte TemplateUtt, int8_t shift){
+  byte band,seg,importance;
+  int aUtterance[nSegments][nBand+1];
+  int Dist,aMean,aSD;
+
+  ShiftUtterance(Utterance, aUtterance, shift);
+
+  Dist = 0;
+  for (seg = 0; seg < nSegments; seg++) {
+    if (seg == 0)
+      importance = 2; else
+      importance = 1;
+
+    for (band = 0; band <= nBand; band++) {
+      aMean = pgm_read_word(&Templates[TemplateUtt][seg][band].mean);
+      aSD = pgm_read_word(&Templates[TemplateUtt][seg][band].sd);
+      Dist = constrain(Dist+importance*abs(((long)aUtterance[seg][band])-aMean)*1000 / (50+aSD),-10000,+10000);
+    }
+  }
+
+  return Dist;
+}
+
+//-----------------------------------------------------------------------------
+// ShiftUtterance
+//   shift an utterance by shift/SubShifts
+//-----------------------------------------------------------------------------
+void ShiftUtterance(int utSource[nSegments][nBand+1], int utDest[nSegments][nBand+1], int shift) {
+  int8_t i,j,k,n;
+  int m;
+  byte seg,band;
+
+  if (shift == 0) {
+    for (seg = 0; seg < nSegments; seg++)
+      for (band = 0; band <= nBand; band++)
+        utDest[seg][band] = utSource[seg][band];
+  } 
+  else {
+    for (seg = 0; seg < nSegments; seg++)
+    {
+      n = SubShifts*(nSegments-1);
+      i = shift*(nSegments-1);
+      j = -i / (SubShifts*(nSegments-1));
+      i = abs(i) % ((nSegments-1)*SubShifts);
+
+      if (shift < 0)
+        k = j+1; 
+      else
+        k = j-1;
+      for (band = 0; band <= nBand; band++) {
+        if ((seg+j >= 0) && (seg+j < nSegments))
+          m = utSource[seg+j][band]*((nSegments-1)*SubShifts-i) / n; else
+          m = 0;
+        if ((seg+k >= 0) && (seg+k < nSegments))
+          m = m+utSource[seg+k][band]*i / n;
+        utDest[seg][band] = m;
+      }
+    }
+  }
+
+  NormaliseUtterance(utDest);
+}
+
+//-----------------------------------------------------------------------------
+// NormaliseUtterance
+//-----------------------------------------------------------------------------
+void NormaliseUtterance(int Utterance[nSegments][nBand+1]) {
+  byte seg,band;
+  long SegmentTotal,i;
+  SegmentTotal = 0;
+  for (seg = 0; seg < nSegments; seg++)
+    for (band = 0; band <= nBand; band++)
+      SegmentTotal += Utterance[seg][band];
+  SegmentTotal = max(SegmentTotal,(long)1);
+  i = 50*nSegments*nBand;
+  for (seg = 0; seg < nSegments; seg++)
+    for (band = 0; band <= nBand; band++)
+      Utterance[seg][band] = (i*Utterance[seg][band]) / SegmentTotal;
+}
+
+//-----------------------------------------------------------------------------
+// FindBestShift
+//-----------------------------------------------------------------------------
+int FindBestShift(int Utterance[nSegments][nBand+1], int TemplateUtt) {
+  int dist,BestShift,BestShiftDist,shift;
+  BestShiftDist = 0x7FFF;
+  for (shift = -MaxShift; shift <= MaxShift; shift++) {
+    dist = ShiftedDistance(Utterance,TemplateUtt,shift);
+    if (dist < BestShiftDist) {
+      BestShiftDist = dist;
+      BestShift = shift;
+    }
+  }
+  return BestShift;
+}
+
+//-----------------------------------------------------------------------------
+// FindBestUtterance
+//   which template best fits the utterance 
+//-----------------------------------------------------------------------------
+int FindBestUtterance(int Utterance[nSegments][nBand+1], int *BestDist) {
+  int dist,BestUttDist,shiftDist;
+  int BestUtt,shift,TemplateUtt;
+
+  BestUtt = 0;
+  *BestDist = 0;
+  BestUttDist = 0x7FFF;
+  int r[2];
+  for (TemplateUtt = 0; TemplateUtt < nUtterances; TemplateUtt++) {
+    shift = FindBestShift(Utterance,TemplateUtt);
+    shiftDist = ShiftedDistance(Utterance,TemplateUtt,shift);
+    r[TemplateUtt]=shiftDist;
+    Serial.print(TemplateUtt);
+    Serial.print(":");
+    Serial.println(shiftDist);
+
+    if (shiftDist < BestUttDist) {
+      BestUttDist = shiftDist;
+      BestUtt = TemplateUtt;
+      *BestDist = BestUttDist;
+    }
+  }
+  if(r[0]>600) return 1;
+  else return 0;
+  return BestUtt;
+}
+
+
+
+
+void repeat() {
+  i2s_set_sample_rates(i2s_num, 8000);
+  for (int i = 0; i < 8000; i++) {
+    size_t BytesWritten;
+    curData[i] *= 8;
+    i2s_write(i2s_num, curData + i, 2, &BytesWritten, portMAX_DELAY);
+  }
+}
+void play(int x) {
+  i2s_set_sample_rates(i2s_num, WavHeader[x].SampleRate);
+  for(int i=0;i<WavHeader[x].DataSize;i+=BytesWritten) {
+    if(x==0) i2s_write(i2s_num, WavDataA + i, 2, &BytesWritten, portMAX_DELAY);
+    else if(x==1) i2s_write(i2s_num, WavDataB + i, 2, &BytesWritten, portMAX_DELAY);
+    else i2s_write(i2s_num, WavDataC + i, 2, &BytesWritten, portMAX_DELAY);
+  }
+}
+
+
+
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(IN, INPUT);
+  init();
+  analogRead(IN); // initialise ADC to read audio input
+  PollBands(true);
+  memcpy(&WavHeader[0],&WavDataA,44);
+  memcpy(&WavHeader[1],&WavDataB,44);
+  memcpy(&WavHeader[2],&WavDataC,44);
+}
+char flag = '0';
+void loop() {
+  if (Serial.available()>0){
+    flag = Serial.read();
+  }
+  if (ADCfast()){
+      //采样完毕通过串口回传数据
+    if (flag == '1') {  
+      for (curSample = 0; curSample < sample_length; curSample++) {
+        Serial.write(curData[curSample]);
+        Serial.write((curData[curSample]>>8));
+      }
+    }
+  }
+
+  if (PollBands(false)){
+      //采样完毕通过串口回传数据
+    if (flag > '1') {  
+      PrintCurBandData();
+      delay(500);
+      if (flag > '2')
+        flag = '0';
+    }  
+  } 
+  if (Collecting){
+    int i = AnalyseUtterance(CurBandData);
+    Serial.print("语音命令标号: ");  
+    Serial.println(i);
+    if (i==0)
+    {
+      play(0);
+      Serial.println("士小信");
+      delay(1500);
+    } 
+    else
+    {
+      play(1);
+      Serial.println("录音");
+      delay(1000);
+      for(int j=0;j<3;j++)
+      {
+        if(ADCfast()) {
+          repeat();
+          Serial.println("录音成功");
+        }
+        if(j!=2) delay(500);
+      }
+      play(2);
+      delay(2000);
+    }
+  }
+  // if (ADCfast()) {
+  //   Serial.println("YES");
+  //   repeat();
+  // }
+  delay(100);
+}
+
+```
+    </textarea>
+    <div id="markdownDisplay"></div>
+    <span id="edit_index">20250528122830</span>
+    <script>
+        marked.setOptions({
+            breaks: true
+        });
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\$', '\$']]  // 同时启用两种标识
+            }
+        };
+        $(function () {
+            // console.log(1);
+            var rawMarkdown = document.getElementById('markdownTextArea').value;
+            var processedHTML = marked.parse(rawMarkdown);
+            // console.log(processedHTML);
+            document.getElementById('markdownDisplay').innerHTML = processedHTML;
+            hljs.highlightAll();
+            MathJax.typesetPromise([markdownDisplay]).catch((err) => console.error(err));
+        });
+    </script>
+    <script src="..\js\blogtext.js"></script>
+</body>
+
+</html>

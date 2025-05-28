@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="..\css\general.css" />
+    <link rel="stylesheet" href="..\node_modules\highlight.js\styles\docco.css" />
+    <link rel="stylesheet" href="..\css\blogtext.css" />
+    <script src="..\node_modules\marked\marked.min.js"></script>
+    <script src="..\node_modules\jquery\dist\jquery.min.js"></script>
+    <script src="..\node_modules\highlight.js\highlight.min.js"></script>
+    <script id="MathJax-script" async src="..\node_modules\mathjax\es5\tex-mml-chtml.js"></script>
+    <title></title>
+</head>
+
+<body>
+    <div class="nav">
+        <img src="../img/nav_icon.avif" class="avtar" alt="">
+        <div id="photo">Yeln</div>
+        <div id="home"><a href="../home.html">主页</a></div>
+        <div id="list"><a href="../list.html">文章</a></div>
+        <div id="about"><a href="../about.html">关于</a></div>
+    </div>
+    <div class="container">
+        <div class="container-left">
+            <div class="card">
+                <img src="../img/myicon.jpg" class="avtar" alt="">
+                <h3>Yeln</h3>
+                <a href="https://github.com">github 地址</a>
+                <!-- <div class="counter">
+                    <span>文章</span>
+                    <span>分类</span>
+                </div>
+                <div class="counter">
+                    <span>2</span>
+                    <span>1</span>
+                </div> -->
+            </div>
+        </div>
+        <div class="container-right" id="markdownDisplay"></div>
+        <button id="edit">编辑</button>
+        <button id="delete">删除</button>
+    </div>
+    <textarea id="markdownTextArea" style="width: 100%; height: 200px;display:none;">
+
+# CF2108E Spruce Dispute
+<span style="font-size: 0.4em; color: #888;">2025年05月03日 18:57:05</span>
+
+---
+<br>
+
+题意是先融合两个相邻的点，然后给剩下的点配对，求配对的两个点的距离之和。
+
+第一个问题是，偶数个节点怎么配对？
+
+首先，要直观地去想重心。因为重心每个子树大小小于$\frac{n-1}{2}$，这样子一定可以保证有一个方案是子树内没有相同颜色。然后这样子答案是所有点到重心距离。
+
+那为什么这样最优？
+
+因为如果子树内有相同颜色的话，对于这一对以外的点，他们的贡献是到重心距离。而这一对点的贡献小于到重心距离(他们的lca深度大了)，这样答案劣。
+
+那为什么选重心？
+
+保证可以构造出这样的方案，其他方案，不一定可以构造出子树内没有同颜色的。
+
+然后删哪个？
+
+明显删去离重心最近的叶子节点比较好。因为不删叶子节点，删另一个点的话，那个点到它子树内的任意叶子节点的链减少的贡献就和叶子结点一样了，而还有可能有其他点，至少不会更优。而删叶子节点的话，减的是到重心的距离，肯定选最近的减的比较少。
+
+```cpp
+/*
+「頼むよ神様、こんな人生だったんだ。
+拜托了，神啊，都已经是这样的人生了……
+せめて一度ぐらい、幸せな梦を见させて」
+至少让我做一次幸福的梦吧……
+*/
+#include<bits/stdc++.h>
+#define mid ((l+r)>>1)
+using namespace std;
+using ll=long long;
+const int mod=1e9+7;
+const int N=200020;
+
+
+/*
+这题还是太妙了qwq
+*/
+vector<int> e[N];
+int sz[N],maxn[N],son,n;
+void dfs(int u,int fa)
+{
+    sz[u]=1;
+    for(auto v:e[u])
+    {
+        if(v==fa) continue;
+        dfs(v,u);
+        sz[u]+=sz[v];
+        maxn[u]=max(maxn[u],sz[v]);
+    }
+    maxn[u]=max(maxn[u],n-sz[u]);
+    if(maxn[u]<maxn[son]) son=u;
+}
+int ans[N],dep[N],fat[N],lst;
+int f[N],tot;
+void dfs2(int u,int fa)
+{
+    fat[u]=fa;
+    dep[u]=dep[fa]+1;
+    for(auto v:e[u])
+    {
+        if(v==fa) continue;
+        dfs2(v,u);
+    }
+    if(e[u].size()==1&&dep[lst]>dep[u]) lst=u;
+}
+void dfs3(int u,int fa)
+{
+    for(auto v:e[u])
+    {
+        if(v==fa) continue;
+        dfs3(v,u);
+    }
+    if(u!=lst) ans[u]=f[++tot];
+}
+void sol()
+{
+    cin>>n;
+    for(int i=1;i<=n;i++) e[i].clear(),sz[i]=maxn[i]=ans[i]=0;
+    maxn[0]=dep[n+1]=n+1;son=0;lst=n+1;
+    tot=0;
+    for(int i=1;i<=(n-1)/2;i++) f[i]=i;
+    for(int i=(n+1)/2;i<=n;i++) f[i]=f[i-(n-1)/2];
+    for(int i=1;i<=n-1;i++)
+    {
+        int u,v;cin>>u>>v;
+        e[u].push_back(v);
+        e[v].push_back(u);
+    }
+    dfs(1,0);
+    // for(int i=1;i<=n;i++) cout<<maxn[i]<<" ";cout<<endl;
+    dfs2(son,0);
+    cout<<lst<<" "<<fat[lst]<<endl;
+    if(fat[lst]>lst) lst=fat[lst];
+    dfs3(son,0);
+    for(int i=1;i<=n;i++) cout<<ans[i]<<" ";cout<<endl;
+}
+signed main()
+{
+    ios::sync_with_stdio(0);
+    cin.tie(0),cout.tie(0);
+
+    int T;cin>>T;
+    while(T--) sol();
+    return 0;
+}
+
+```
+    </textarea>
+    <div id="markdownDisplay"></div>
+    <span id="edit_index">20250503185705</span>
+    <script>
+        marked.setOptions({
+            breaks: true
+        });
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\$', '\$']]  // 同时启用两种标识
+            }
+        };
+        $(function () {
+            // console.log(1);
+            var rawMarkdown = document.getElementById('markdownTextArea').value;
+            var processedHTML = marked.parse(rawMarkdown);
+            // console.log(processedHTML);
+            document.getElementById('markdownDisplay').innerHTML = processedHTML;
+            hljs.highlightAll();
+            MathJax.typesetPromise([markdownDisplay]).catch((err) => console.error(err));
+        });
+    </script>
+    <script src="..\js\blogtext.js"></script>
+</body>
+
+</html>

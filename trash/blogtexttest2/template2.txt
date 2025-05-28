@@ -1,0 +1,25 @@
+
+    </textarea>
+    <div id="markdownDisplay"></div>
+    <script>
+        marked.setOptions({
+            breaks: true
+        });
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\$', '\$']]  // 同时启用两种标识
+            }
+        };
+        $(function () {
+            console.log(1);
+            var rawMarkdown = document.getElementById('markdownTextArea').value;
+            var processedHTML = marked.parse(rawMarkdown);
+            console.log(processedHTML);
+            document.getElementById('markdownDisplay').innerHTML = processedHTML;
+            MathJax.typesetPromise([markdownDisplay]).catch((err) => console.error(err));
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,185 @@
+先来看[HNOI2016]序列，这似乎是一个经典问题，询问一个区间里所有子区间的最小值之和，如果是整个区间，是好做的，对于每个求它作为最小值的贡献就可以（再次复习一下，推广做法可以考虑依靠原来的做法，比如删去一个数的贡献也可以这么求，确实好！）
+
+但是这题不行，因为截断的话对于每个的影响都很不同，很难找到一个方法完成。那就需要另辟蹊径，那就是先求一次前缀和，再求一次前缀和的前缀和来取出答案，但是最小值一定可以前缀吗？本题可以！
+
+设$f_i$为以$i$为终点的所有区间的和，可以发现$f_i=f_p+(i-p)\times a_i$。
+
+那么为什么可以前缀呢？因为这个前缀是用来求$[p+1,r]$范围内的贡献的，那么$p$就一定比这个范围内所有数都要小，也就是说，$[i,p],[i,r]$的最小值一定一样，太妙了！
+
+于是起点在$[1,p]$的所有全被减掉即可！所以就可以求出$[p+1,j]$的贡献了，然后再前缀一次即可！
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+using ll=long long;
+const int mod=1e9+7;
+const int N=100020;
+
+
+int st[N][22],n,a[N];
+ll sf[N],sg[N],f[N],g[N];
+int pre[N],suf[N];
+void init()
+{
+    stack<int> q;
+    for(int i=1;i<=n;i++)
+    {
+        while(!q.empty()&&a[i]<a[q.top()]) suf[q.top()]=i,q.pop();
+        if(!q.empty()) pre[i]=q.top();q.push(i);
+    }
+    for(int i=1;i<=n;i++)
+        if(!suf[i]) suf[i]=n+1;
+    for(int i=1;i<=n;i++)
+        f[i]=f[pre[i]]+1ll*(i-pre[i])*a[i],sf[i]=sf[i-1]+f[i];
+    for(int i=n;i;i--) 
+        g[i]=g[suf[i]]+1ll*(suf[i]-i)*a[i],sg[i]=sg[i+1]+g[i];
+    for(int i=1;i<=n;i++)
+		st[i][0]=i;
+    for(int j=1;j<=22;j++)
+		for(int i=1;i+(1<<j)-1<=n;i++)
+			st[i][j]=(a[st[i][j-1]]<a[st[i+(1<<(j-1))][j-1]])?st[i][j-1]:st[i+(1<<(j-1))][j-1];
+}
+int query(int l,int r)
+{
+	int k=__lg(r-l+1);
+	return a[st[l][k]]<a[st[r-(1<<k)+1][k]]?st[l][k]:st[r-(1<<k)+1][k];
+}
+
+
+void queryS(int l,int r)
+{
+    int pos=query(l,r);
+    ll ans1=1ll*a[pos]*(pos-l+1)*(r-pos+1);
+    ll ans2=1ll*sf[r]-sf[pos]-(r-pos)*f[pos];
+    ll ans3=1ll*sg[l]-sg[pos]-(pos-l)*g[pos];
+    cout<<ans1+ans2+ans3<<endl;
+}
+
+int b[N];
+void sol()
+{
+    cin>>n;
+    int q;cin>>q;
+    for(int i=1;i<=n;i++) cin>>a[i];
+    init();
+    for(int i=1;i<=q;i++)
+    {
+        int l,r;cin>>l>>r;
+        queryS(l,r);
+    }
+}
+signed main()
+{
+    int T=1;
+    while(T--) sol();
+    return 0;
+}
+```
+
+接下来看CF2009G3 Yunli's Subarray Queries (extreme version)
+
+这个第一步是把$a_i$变为$a_i-i$，然后可以转换为$[l,r]$长度为$k$的子区间中出现最多的数的次数与$k$的差值的最小值。
+
+那就可以先预处理出所有子区间内出现最多的次数有多少，令$b_i$表示$[i,i+k-1]$为其$k$减去次数。于是令$r=r-k+1$,就是求$[l,r]$中所有子区间的最小值的和，等价于[HNOI2016]序列！
+
+```cpp
+/*
+「頼むよ神様、こんな人生だったんだ。
+拜托了，神啊，都已经是这样的人生了……
+せめて一度ぐらい、幸せな梦を见させて」
+至少让我做一次幸福的梦吧……
+*/
+#include<bits/stdc++.h>
+using namespace std;
+using ll=long long;
+const int mod=1e9+7;
+const int N=200020;
+
+
+
+int st[N][22],n,a[N];
+ll sf[N],sg[N],f[N],g[N];
+int pre[N],suf[N];
+void init()
+{
+    f[n+1]=g[n+1]=sf[n+1]=sg[n+1]=0;
+    for(int i=1;i<=n;i++) f[i]=g[i]=sf[i]=sg[i]=suf[i]=pre[i]=0;
+    stack<int> q;
+    for(int i=1;i<=n;i++)
+    {
+        while(!q.empty()&&a[i]<a[q.top()]) suf[q.top()]=i,q.pop();
+        if(!q.empty()) pre[i]=q.top();q.push(i);
+    }
+    for(int i=1;i<=n;i++)
+        if(!suf[i]) suf[i]=n+1;
+    for(int i=1;i<=n;i++)
+        f[i]=f[pre[i]]+1ll*(i-pre[i])*a[i],sf[i]=sf[i-1]+f[i];
+    for(int i=n;i;i--) 
+        g[i]=g[suf[i]]+1ll*(suf[i]-i)*a[i],sg[i]=sg[i+1]+g[i];
+    for(int i=1;i<=n;i++)
+		st[i][0]=i;
+    for(int j=1;j<=22;j++)
+		for(int i=1;i+(1<<j)-1<=n;i++)
+			st[i][j]=(a[st[i][j-1]]<a[st[i+(1<<(j-1))][j-1]])?st[i][j-1]:st[i+(1<<(j-1))][j-1];
+}
+int query(int l,int r)
+{
+	int k=__lg(r-l+1);
+	return a[st[l][k]]<a[st[r-(1<<k)+1][k]]?st[l][k]:st[r-(1<<k)+1][k];
+}
+
+
+void queryS(int l,int r)
+{
+    int pos=query(l,r);
+    ll ans1=1ll*a[pos]*(pos-l+1)*(r-pos+1);
+    ll ans2=1ll*sf[r]-sf[pos]-(r-pos)*f[pos];
+    ll ans3=1ll*sg[l]-sg[pos]-(pos-l)*g[pos];
+    cout<<ans1+ans2+ans3<<endl;
+}
+
+map<int,int> vis;
+multiset<int> s;
+int b[N];
+void insert(int x)
+{
+    if(vis[x]!=0) s.erase(s.lower_bound(vis[x]));
+    s.insert(vis[x]+1);
+    vis[x]++;
+}
+void pop(int x)
+{
+    s.erase(s.lower_bound(vis[x]));
+    if(vis[x]!=1) s.insert(vis[x]-1);
+    vis[x]--;
+}
+void sol()
+{
+    s.clear();vis.clear();
+    cin>>n;
+    int k,q;cin>>k>>q;
+    for(int i=1;i<=n;i++) cin>>b[i];
+    for(int i=1;i<=k;i++) insert(b[i]-i);
+    a[1]=k-*--s.end();
+    for(int i=2;i<=n-k+1;i++)
+    {
+        int j=i+k-1;
+        insert(b[j]-j);
+        pop(b[i-1]-(i-1));
+        if(!s.empty()) a[i]=k-*--s.end();
+    }
+    n=n-k+1;
+    init();
+    for(int i=1;i<=q;i++)
+    {
+        int l,r;cin>>l>>r;
+        r=r-k+1;
+        queryS(l,r);
+    }
+}
+signed main()
+{
+    int T; cin>>T;
+    while(T--) sol();
+    return 0;
+}
+```

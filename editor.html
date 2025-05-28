@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 游戏</title>
+    <link rel="stylesheet" href="css\general.css" />
+    <link rel="stylesheet" href="css\editor.css" />
+    <link rel="stylesheet" href="node_modules\editor.md\css\editormd.min.css" />
+</head>
+
+<body>
+    <div class="nav">
+        <img src="img/nav_icon.avif" class="avtar" alt="">
+        <div id="photo">Yeln</div>
+        <div id="home"><a href="home.html">主页</a></div>
+        <div id="list"><a href="list.html">文章</a></div>
+        <div id="about"><a href="about.html">关于</a></div>
+    </div>
+    <br><br><br>
+    <div id="completeEditor">
+        <input type="text" placeholder="文章标题" id="titleEditor">
+        <button id="save">保存文章</button>
+        <div id="editor" style="border-radius:10px;">
+            <!-- Tips: Editor.md can auto append a `<textarea>` tag -->
+            <textarea style="display:block;">###测试公式</textarea>
+        </div>
+    </div>
+    <script src="node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="node_modules/editor.md/editormd.js"></script>
+    <!-- 这两个要手动导入！ -->
+    <script>
+        $(function () {
+            var editor = editormd("editor", {
+                width: "90%",
+                height: 640,
+                saveHTMLToTextarea: true,
+                highlight: true,
+                path: "node_modules/editor.md/lib/",
+                tex: true,
+                toolbar: true
+            });
+            document.getElementById("save").addEventListener('click', async (e) => {
+                e.preventDefault();
+
+                const realtimeMarkdown = editor.getMarkdown();
+                const realtimeHTML = editor.getHTML();
+                const title=document.getElementById("titleEditor").value;
+                // console.log(realtimeHTML);
+                // console.log(title);
+                const response = await fetch('http://localhost:5500/createblog', {//liveserver默认端口（当然可以改）
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ realtimeHTML, realtimeMarkdown,title })
+                    // json格式要对!
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

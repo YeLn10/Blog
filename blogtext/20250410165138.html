@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="..\css\general.css" />
+    <link rel="stylesheet" href="..\node_modules\highlight.js\styles\docco.css" />
+    <link rel="stylesheet" href="..\css\blogtext.css" />
+    <script src="..\node_modules\marked\marked.min.js"></script>
+    <script src="..\node_modules\jquery\dist\jquery.min.js"></script>
+    <script src="..\node_modules\highlight.js\highlight.min.js"></script>
+    <script id="MathJax-script" async src="..\node_modules\mathjax\es5\tex-mml-chtml.js"></script>
+    <title></title>
+</head>
+
+<body>
+    <div class="nav">
+        <img src="../img/nav_icon.avif" class="avtar" alt="">
+        <div id="photo">Yeln</div>
+        <div id="home"><a href="../home.html">主页</a></div>
+        <div id="list"><a href="../list.html">文章</a></div>
+        <div id="about"><a href="../about.html">关于</a></div>
+    </div>
+    <div class="container">
+        <div class="container-left">
+            <div class="card">
+                <img src="../img/myicon.jpg" class="avtar" alt="">
+                <h3>Yeln</h3>
+                <a href="https://github.com">github 地址</a>
+                <!-- <div class="counter">
+                    <span>文章</span>
+                    <span>分类</span>
+                </div>
+                <div class="counter">
+                    <span>2</span>
+                    <span>1</span>
+                </div> -->
+            </div>
+        </div>
+        <div class="container-right" id="markdownDisplay"></div>
+        <button id="edit">编辑</button>
+        <button id="delete">删除</button>
+    </div>
+    <textarea id="markdownTextArea" style="width: 100%; height: 200px;display:none;">
+
+# CF1988E Range Minimum Sum
+<span style="font-size: 0.4em; color: #888;">2025年04月10日 16:51:38</span>
+
+---
+<br>
+
+本题其实却是不难，当然官解似乎很有操作。但是我对于笛卡尔树理解比较浅薄。
+
+首先，本题不能先求出不删的答案然后减掉删后的贡献，因为非常难求，对于$[L_i,i]$和$[R_i,i]$的区间，非常难以求出答案，因为每个$j$延伸出的答案都会不一样。
+
+于是很经典的，求每个$a[j]$的贡献，这样子就可以去分情况而不用枚举来算延伸到哪里了。然后看看情况，我们要求出删掉每个$i$的答案，于是看看是否是可以整体贡献的。是可以的。
+
+对于$[1,L_i-1]$和$[R_i+1,n]$是可以直接计算的，贡献就是$a[j] (R_j-j)(L_j-j)$。
+
+对于$[L_i+1,R_i-1]$，就相对删掉了一个元素，分别把$(R_j-j)$和$(L_j-j)$给减1。
+
+对于$L_i$,$R_i$去求出左边第二个比它小的数，则$j$相当于延伸到那里！这正是好的，每个$j$只会延伸一次，于是不会有一整个区间要修改的烦恼。然后和第一种情况一样，修改一下$L_i,R_i$即可。
+
+```cpp
+/*
+「頼むよ神様、こんな人生だったんだ。
+拜托了，神啊，都已经是这样的人生了……
+せめて一度ぐらい、幸せな梦を见させて」
+至少让我做一次幸福的梦吧……
+*/
+#include<bits/stdc++.h>
+#define mid ((l+r)>>1)
+using namespace std;
+using ll=long long;
+const int N=500020;
+const int mod=1e9+7;
+const int inf=2e18;
+
+
+
+int a[N],L[N],R[N],n;
+int st[N][22];
+inline void init()
+{
+    for(int i=1;i<=n;i++) st[i][0]=a[i];
+    for(int j=1;j<=21;j++)
+		for(int i=1;i+(1<<j)-1<=n;i++)
+			st[i][j]=min(st[i][j-1],st[i+(1<<(j-1))][j-1]);
+    stack<int> q;
+    for(int i=1;i<=n;i++)
+    {
+        while(!q.empty()&&a[q.top()]>a[i]) R[q.top()]=i,q.pop();
+        if(!q.empty()) L[i]=q.top();
+        q.push(i);
+    }
+    while(!q.empty()) R[q.top()]=n+1,q.pop();
+}
+inline int query(int l,int r)
+{
+    int x=__lg(r-l+1);
+    return min(st[l][x],st[r-(1<<x)+1][x]);
+}
+inline int queryL(int x,int y)//query [1-x] the 1st a[pos]<a[y]
+{
+    int l=1,r=x,ans=0;
+    while(l<=r)
+    {
+        if(query(mid,x)<a[y]) ans=mid,l=mid+1;
+        else r=mid-1;
+    }
+    return ans;
+}
+inline int queryR(int x,int y)
+{
+    int l=x,r=n,ans=n+1;
+    while(l<=r)
+    {
+        if(query(x,mid)<a[y]) ans=mid,r=mid-1;
+        else l=mid+1;
+    }
+    return ans;
+}
+
+
+ll del[N];
+inline void add(int l,int r,ll k)
+{
+    del[r+1]-=1ll*k;
+    del[l]+=1ll*k;
+}
+
+
+void sol()
+{
+    cin>>n;
+    for(int i=1;i<=n;i++) cin>>a[i],del[i]=L[i]=R[i]=0;del[0]=0;
+    init();
+
+    for(int j=1;j<=n;j++)
+    {
+        add(1,L[j]-1,1ll*a[j]*(j-L[j])*(R[j]-j));
+        add(R[j]+1,n,1ll*a[j]*(j-L[j])*(R[j]-j));
+        add(L[j]+1,j-1,1ll*a[j]*(j-L[j]-1)*(R[j]-j));
+        add(j+1,R[j]-1,1ll*a[j]*(j-L[j])*(R[j]-j-1));
+
+        int pl=queryL(L[j]-1,j),pr=queryR(R[j]+1,j);
+        add(L[j],L[j],1ll*a[j]*(j-pl-1)*(R[j]-j));
+        add(R[j],R[j],1ll*a[j]*(j-L[j])*(pr-j-1));
+    }
+    for(int i=1;i<=n;i++) del[i]+=del[i-1];
+    for(int i=1;i<=n;i++) cout<<del[i]<<" ";cout<<endl;
+}
+signed main()
+{
+    int T;std::cin>>T;
+    while(T--) sol();
+    return 0;
+}
+```
+    </textarea>
+    <div id="markdownDisplay"></div>
+    <span id="edit_index">20250410165138</span>
+    <script>
+        marked.setOptions({
+            breaks: true
+        });
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\$', '\$']]  // 同时启用两种标识
+            }
+        };
+        $(function () {
+            // console.log(1);
+            var rawMarkdown = document.getElementById('markdownTextArea').value;
+            var processedHTML = marked.parse(rawMarkdown);
+            // console.log(processedHTML);
+            document.getElementById('markdownDisplay').innerHTML = processedHTML;
+            hljs.highlightAll();
+            MathJax.typesetPromise([markdownDisplay]).catch((err) => console.error(err));
+        });
+    </script>
+    <script src="..\js\blogtext.js"></script>
+</body>
+
+</html>

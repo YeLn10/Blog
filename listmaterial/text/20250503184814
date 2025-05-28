@@ -1,0 +1,91 @@
+题意是选从$n$个数中选$k$个取$m$，选$k$个取$p$，不能相交，且$\Sigma p\le \Sigma m$。
+
+这题有一个很显然的贪心，若是$m_i-p_j \le m_j-p_i$ 那么可以知道取$i$的$m$,$j$的$p$不如把他们反过来取。但是这里有一个前提，就是$i,j$都被取了。换句话说就是都在答案序列里！
+
+那么如果按这个序来排序的话，可以知道**答案序列**一定有一个分界点，后面都取$m$，前面都去$p$，从而保证反过来取不会更劣！但是不是说把初始序列排序就可以直接从头选！只有两个都选了才有这个性质！
+
+因此我们枚举这个分界点，然后看看两边最多可以偷几个，或者说就是最大的满足左边的前$k$数大和小于右边的前$k$小数和的$k$。这个比较难维护，但是显然有单调性，用二分实现比较方便！
+
+```cpp
+/*
+「頼むよ神様、こんな人生だったんだ。
+拜托了，神啊，都已经是这样的人生了……
+せめて一度ぐらい、幸せな梦を见させて」
+至少让我做一次幸福的梦吧……
+*/
+#include<bits/stdc++.h>
+#define int long long
+#define mid ((l+r)>>1)
+using namespace std;
+using ll=long long;
+const int mod=1e9+7;
+const int N=1000020;
+const ll inf=4e16;
+
+/*
+这题还挺妙的！
+对贪心理解不深导致的
+
+首先应该是答案序列满足升序选择，否则不优
+然后推出原序列按m+p排序也有一个单调选择
+但是不一定是排序后直接选择！而是要枚举分界点！因为只有答案序列是满足的！
+还是对贪心理解不深
+*/
+int n,f[N],g[N];
+struct node{
+    int m,p;
+    friend bool operator<(node a,node b) {return a.m+a.p<b.m+b.p;}
+}a[N];
+inline int ck(int x)
+{
+    if(x==0) return 1;
+
+    priority_queue<int> q;
+    int sum=0;
+    for(int i=1;i<=n;i++)
+    {
+        int p=a[i].p;
+        q.push(p),sum+=p;
+        if(q.size()>x) sum-=q.top(),q.pop();
+        f[i]=sum;
+    }
+    sum=0;
+    priority_queue<int,vector<int>,greater<int> > q2;
+    for(int i=n;i;i--)
+    {
+        int m=a[i].m;
+        q2.push(m),sum+=m;
+        if(q2.size()>x) sum-=q2.top(),q2.pop();
+        g[i]=sum;
+    }
+    // for(int i=1;i<=n;i++) cout<<f[i]<<" "<<g[i]<<endl;
+
+    for(int i=x;i<=n-x;i++)
+        if(f[i]<=g[i+1]) return 1;
+    return 0;
+}
+void sol()
+{
+    cin>>n;
+    for(int i=1;i<=n;i++) cin>>a[i].m;
+    for(int i=1;i<=n;i++) cin>>a[i].p;
+    sort(a+1,a+1+n);
+    int l=0,r=n;
+    while(l<=r)
+    {
+        if(ck(mid)) l=mid+1;
+        else r=mid-1;
+    }
+    cout<<r<<endl;
+}
+signed main()
+{
+    ios::sync_with_stdio(0);
+    cin.tie(0),cout.tie(0);
+
+    int T=1;
+    while(T--) sol();
+    return 0;
+}
+```
+

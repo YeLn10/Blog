@@ -1,0 +1,14 @@
+个人记录，我估计下学期电设肯定要换实验所以似乎也没有什么借鉴意义。而且AI写的肯定都比我好。
+
+## 双人贪吃蛇
+
+这个是在是做不出两个板子的通信了，怎么Serial1会读自己发出去的东西啊。于是只能有一个led了。
+
+副板子
+```cpp
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH        128 // OL

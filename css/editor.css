@@ -1,0 +1,19 @@
+#completeEditor {
+    opacity: 0.9;
+}
+
+#titleEditor{
+    width: 176vh;
+    height: 50px;
+    margin-bottom: 1%;
+    border-radius: 10px;
+    font-size: larger;
+    text-align: center;
+    background-color: rgb(255, 255, 255);
+    border: none;
+    outline: none;
+}
+
+#save{
+    height: 50px;
+}

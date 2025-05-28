@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="..\node_modules\marked\marked.min.js"></script>
+    <script src="..\node_modules\jquery\dist\jquery.min.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <title></title>
+</head>
+
+<body>
+    <textarea id="markdownTextArea" style="width: 100%; height: 200px;display:none;">
+### 测试公式
+
+$wocao$ 现在我是煞笔
+$\alpha_1=\sum_1^2 \Delta \frac{1}{2}$
+jdasjhkdjhjj    </textarea>
+    <div id="markdownDisplay"></div>
+    <script>
+        marked.setOptions({
+            breaks: true
+        });
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\$', '\$']]  // 同时启用两种标识
+            }
+        };
+        $(function() {
+            console.log(1);
+            var rawMarkdown = document.getElementById('markdownTextArea').value;
+            var processedHTML = marked.parse(rawMarkdown);
+            console.log(processedHTML);
+            document.getElementById('markdownDisplay').innerHTML = processedHTML;
+            MathJax.typesetPromise([markdownDisplay]).catch((err) => console.error(err));
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css\general.css" />
+    <link rel="stylesheet" href="css\list.css" />
+    <title></title>
+</head>
+
+<body>
+    <div class="nav">
+        <img src="img/nav_icon.avif" class="avtar" alt="">
+        <div id="photo">Yeln</div>
+        <div id="home">home</div>
+        <div id="list">list</div>
+        <div id="about">about</div>
+    </div>
+    <div class="container">
+        <div class="container-left">
+            <div class="card">
+                <img src="img/myicon.jpg" class="avtar" alt="">
+                <h3>Yeln</h3>
+                <a href="https://github.com">github 地址</a>
+                <!-- <div class="counter">
+                    <span>文章</span>
+                    <span>分类</span>
+                </div>
+                <div class="counter">
+                    <span>2</span>
+                    <span>1</span>
+                </div> -->
+            </div>
+        </div>
+        <div class="container-right">
+<div class="unit"><a href="blogtext\20250528122830.html">北航大一电设 部分实验记录<a><br><span style="font-size: 0.4em; color: #888;">2025年05月28日 12:28:30</span><br><span style="font-size: 0.4em;">个人记录，我估计下学期电设肯定要换实验所以似乎也没有什么借鉴意义。而且AI写的肯定都比我好。## 双人贪吃蛇这个是在是做不出两个板子的通信了，怎么Serial1会读自己发出去的东西啊。于是只能有一个led了。副板子```cpp#include #include #include #include #define SCREEN_WIDTH        128 // OL</span><br></div>
+<div class="unit"><a href="blogtext\20250522160055.html">CF1743E FTL<a><br><span style="font-size: 0.4em; color: #888;">2025年05月22日 16:00:55</span><br><span style="font-size: 0.4em;">又是诡异的题目。一直在想贪心```cpp/*「頼むよ神様、こんな人生だったんだ。拜托了，神啊，都已经是这样的人生了……せめて一度ぐらい、幸せな梦を见させて」至少让我做一次幸福的梦吧……*/#include#define int long long#define mid ((l+r)>>1)using namespace std;using ll=long long;const ll inf=4e17;const int N=3000</span><br></div>
+<div class="unit"><a href="blogtext\20250522145821.html">2022牛客暑期多校训练营I War of Inazuma (Hard Version)<a><br><span style="font-size: 0.4em; color: #888;">2025年05月22日 14:58:21</span><br><span style="font-size: 0.4em;">构造！题解是对编码分块，这是诡谲的，但是确实很妙。为什么会这样想呢，毕竟限制是$\sqrt n$，对编码分了块后，看有没有什么方法能限制只有一个块连的同色点。（连边方法是二进制下不同的位置只有1，也就是本身每个编码对应一个点，这个点的只有那个位置的数与原点不同。这里就是说只有那个块对应的点连的才是同色点）然后就对这个编码分块，比如$000|010|110$，然后我们要找一种方法，让只有一个块连的同色点。找到的方法是，有一块全0就反色这个点。这个点连的n个点中，只有没有全0的会和他同色</span><br></div>
+<div class="unit"><a href="blogtext\20250506150202.html">2022牛客暑期多校训练营4 A.Task Computing<a><br><span style="font-size: 0.4em; color: #888;">2025年05月06日 15:02:02</span><br><span style="font-size: 0.4em;">[比赛链接](https://ac.nowcoder.com/acm/contest/33189 "比赛链接")比较套路的一道题。首先第一个难点是要决定顺序，感觉贪心就像是能解决的样子。实际和P10747差不多，都是交换法贪心，看看答案序列怎么要不会劣，然后可以对原序列排序，然后照着取就可以，这样就解决了顺序。式子也比较好推。现在问题来到了如何求出选哪些，因为已经确定顺序了。那么肯定要dp，怎么去dp呢？正着dp明显有后效性，因为p会对后面的w产生贡献，那不好搞。但是反着来，已经知道了w</span><br></div>
+<div class="unit"><a href="blogtext\20250503185705.html">CF2108E Spruce Dispute<a><br><span style="font-size: 0.4em; color: #888;">2025年05月03日 18:57:05</span><br><span style="font-size: 0.4em;">题意是先融合两个相邻的点，然后给剩下的点配对，求配对的两个点的距离之和。第一个问题是，偶数个节点怎么配对？首先，要直观地去想重心。因为重心每个子树大小小于$\frac{n-1}{2}$，这样子一定可以保证有一个方案是子树内没有相同颜色。然后这样子答案是所有点到重心距离。那为什么这样最优？因为如果子树内有相同颜色的话，对于这一对以外的点，他们的贡献是到重心距离。而这一对点的贡献小于到重心距离(他们的lca深度大了)，这样答案劣。那为什么选重心？保证可以构造出这样的方案，其他</span><br></div>
+<div class="unit"><a href="blogtext\20250503184814.html">P10747 [SEERC 2020] Neo-Robin Hood<a><br><span style="font-size: 0.4em; color: #888;">2025年05月03日 18:48:14</span><br><span style="font-size: 0.4em;">题意是选从$n$个数中选$k$个取$m$，选$k$个取$p$，不能相交，且$\Sigma p\le \Sigma m$。这题有一个很显然的贪心，若是$m_i-p_j \le m_j-p_i$ 那么可以知道取$i$的$m$,$j$的$p$不如把他们反过来取。但是这里有一个前提，就是$i,j$都被取了。换句话说就是都在答案序列里！那么如果按这个序来排序的话，可以知道**答案序列**一定有一个分界点，后面都取$m$，前面都去$p$，从而保证反过来取不会更劣！但是不是说把初始序列排序就可以直接从</span><br></div>
+<div class="unit"><a href="blogtext\20250415193147.html">CF2009G3 Yunli's Subarray Queries (extreme version)/P3246 [HNOI2016]序列<a><br><span style="font-size: 0.4em; color: #888;">2025年04月15日 19:31:47</span><br><span style="font-size: 0.4em;">先来看[HNOI2016]序列，这似乎是一个经典问题，询问一个区间里所有子区间的最小值之和，如果是整个区间，是好做的，对于每个求它作为最小值的贡献就可以（再次复习一下，推广做法可以考虑依靠原来的做法，比如删去一个数的贡献也可以这么求，确实好！）但是这题不行，因为截断的话对于每个的影响都很不同，很难找到一个方法完成。那就需要另辟蹊径，那就是先求一次前缀和，再求一次前缀和的前缀和来取出答案，但是最小值一定可以前缀吗？本题可以！设$f_i$为以$i$为终点的所有区间的和，可以发现$f_i=f_</span><br></div>
+<div class="unit"><a href="blogtext\20250414235402.html">CF985G Team Players<a><br><span style="font-size: 0.4em; color: #888;">2025年04月14日 23:54:02</span><br><span style="font-size: 0.4em;">非常不错的题目，令我心潮澎湃。题意是有一些边，连着一些点，然后找所有三元组。本来想着枚举什么，然后通过奇怪的算贡献正面算的，但是发现必须要容斥，正面总会少情况，各种容斥搞复杂了。不如就最简单的，就是所有$-$一个$+$两个$-..$这种的。记录 $S_i$ 为前缀和，$a_i$为 $i-1$(这样子可以把下标变为 $[1,n]$)。一、对于所有的，贡献是$A\times S_{u-1} \times (n-u)+B\times(u-1)\times(n-u)+C\times(</span><br></div>
+<div class="unit"><a href="blogtext\20250410165138.html">CF1988E Range Minimum Sum<a><br><span style="font-size: 0.4em; color: #888;">2025年04月10日 16:51:38</span><br><span style="font-size: 0.4em;">本题其实却是不难，当然官解似乎很有操作。但是我对于笛卡尔树理解比较浅薄。首先，本题不能先求出不删的答案然后减掉删后的贡献，因为非常难求，对于$[L_i,i]$和$[R_i,i]$的区间，非常难以求出答案，因为每个$j$延伸出的答案都会不一样。于是很经典的，求每个$a[j]$的贡献，这样子就可以去分情况而不用枚举来算延伸到哪里了。然后看看情况，我们要求出删掉每个$i$的答案，于是看看是否是可以整体贡献的。是可以的。对于$[1,L_i-1]$和$[R_i+1,n]$是可以直接计算的，贡献</span><br></div>
+<div class="unit"><a href="blogtext\20250405173853.html">213<a><br><span style="font-size: 0.4em; color: #888;">2025年04月05日 17:38:53</span><br><span style="font-size: 0.4em;">###测试公式 2</span><br></div>
+<div class="unit"><a href="blogtext\20250402160542.html">生活经验<a><br><span style="font-size: 0.4em; color: #888;">2025年04月02日 16:05:42</span><br><span style="font-size: 0.4em;">[华为安装谷歌框架](https://toalan.com/archives/71/ "华为安装谷歌框架")ipad改日区：电话号码03-xxxxxxxx，番号1010021，其他随意</span><br></div>
+<div class="unit"><a href="blogtext\20250402154326.html">电设经验<a><br><span style="font-size: 0.4em; color: #888;">2025年04月02日 15:43:26</span><br><span style="font-size: 0.4em;">如果电脑和板子连不上，换几个口，重启一下电脑和板子。如果是在连不上那就是板子坏了。学硬件是真烦啊，不仅要担心软件还要担心硬件。当出现status 2 error时，一般是硬件问题，此时要按住boot+ret+松开boot，去重设esp32板子。并且一般这个问题是你没有断电就去修改连线。我建议还是断电再改吧。板子动不了就按ret，我说重启是电子设备的底层逻辑。如果终端serial输出不了东西，检查tool里面有没有enable一些东西。serial1一般是板子读入输出，所以seri</span><br></div>
+<div class="unit"><a href="blogtext\20250321004311.html">2025-3-21 日记<a><br><span style="font-size: 0.4em; color: #888;">2025年03月21日 00:43:11</span><br><span style="font-size: 0.4em;">今天下午真是一坨，在纲要的干扰下无法专心写题，逻辑不清楚不知道这一步操作后有什么影响要有，什么东西要去除！上午还不错！对于有限无限，确定点和边界等的特殊性有了较为好的理解。晚上有时一坨，T2创死我了。接下来继续补题！周末党课团史+晚上cf+周日下cf，再看看社团中心又有什么诡谲的事情！</span><br></div>
+<div class="unit"><a href="blogtext\20250321001821.html">CF2071F Towering Arrays<a><br><span style="font-size: 0.4em; color: #888;">2025年03月21日 00:18:21</span><br><span style="font-size: 0.4em;">非常困难的问题（对我来说）。我能感到我对于这种问题的整体思维理不清楚，等把该补的题补完就开始加训！本题题意是要找到最大的 $p$，使得存在 $i$ 对于任意 $j$ 有 $b_j\le p-|i-j|$。首先，本题要先想到二分一个 $p$，带着 $p$ 完全没法做。二分后，至少 $p$ 是一个已知量。而且显然问题具有单调性。二分 $p$ 之后，发现枚举 $i$ ，问题对于左右是相互独立的，因为只和两边到这个点的距离有关。先确定一个 $i$ , 那么先把不符合的点删去，这样子做会导致一</span><br></div>
+<div class="unit"><a href="blogtext\20250319230727.html">初步落地的感想<a><br><span style="font-size: 0.4em; color: #888;">2025年03月19日 23:07:27</span><br><span style="font-size: 0.4em;">共耗时三天，终于完成了博客的初步搭建，下一步是git，顺便可以学习一下怎么用git。然后就是把各种题写个题解加强一下理解！说实话 $$AI$$ 还是厉害，我这种半吊子也能写个博客捏。</span><br></div>
+
+        </div>
+    </div>
+</body>
+
+</html>

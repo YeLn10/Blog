@@ -1,0 +1,66 @@
+又是诡异的题目。
+
+一直在想贪心
+
+```cpp
+/*
+「頼むよ神様、こんな人生だったんだ。
+拜托了，神啊，都已经是这样的人生了……
+せめて一度ぐらい、幸せな梦を见させて」
+至少让我做一次幸福的梦吧……
+*/
+#include<bits/stdc++.h>
+#define int long long
+#define mid ((l+r)>>1)
+using namespace std;
+using ll=long long;
+const ll inf=4e17;
+const int N=300020;
+const int mod=998244353;
+
+
+
+int f[N];
+void sol()
+{
+    int p1,t1,p2,t2,h,s;
+    cin>>p1>>t1>>p2>>t2>>h>>s;
+    memset(f,0x3f,sizeof(f));
+    f[0]=0;
+    for(int i=1;i<=h;i++)
+    {
+        f[i]=min(f[i],f[max(0ll,i-p1+s)]+t1);
+        f[i]=min(f[i],f[max(0ll,i-p2+s)]+t2);
+        for(int j=1;j<=h;j++)
+        {
+            int r1=(j-1)*(p1-s);
+            int r2=(j*t1-t2)/t2*(p2-s);
+            int r3=p1+p2-s;
+            int res=r1+r2+r3;
+            if(j*t1<t2) res=(j-1)*(p1-s);
+            f[i]=min(f[i],f[max(0ll,i-res)]+j*t1);
+        }
+        for(int j=1;j<=h;j++)
+        {
+            int r1=(j-1)*(p2-s);
+            int r2=(j*t2-t1)/t1*(p1-s);
+            int r3=p1+p2-s;
+            int res=r1+r2+r3;
+            if(j*t2<t1) res=(j-1)*(p2-s);
+            f[i]=min(f[i],f[max(0ll,i-res)]+j*t2);
+        }
+    }
+    // for(int i=1;i<=h;i++)
+    //     cout<<f[i]<<" ";
+    cout<<f[h]<<endl;
+}
+signed main()
+{
+    ios::sync_with_stdio(0);
+    cin.tie(0),cout.tie(0);
+    
+    int T=1;
+    while(T--) sol();
+    return 0;
+}
+```

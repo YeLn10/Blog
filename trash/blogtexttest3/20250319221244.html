@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="..\css\general.css" />
+    <link rel="stylesheet" href="..\css\blogtext.css" />
+    <script src="..\node_modules\marked\marked.min.js"></script>
+    <script src="..\node_modules\jquery\dist\jquery.min.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <title></title>
+</head>
+
+<body>
+    <div class="nav">
+        <img src="../img/nav_icon.avif" class="avtar" alt="">
+        <div id="photo">Yeln</div>
+        <div id="home">home</div>
+        <div id="list">list</div>
+        <div id="about">about</div>
+    </div>
+    <div class="container">
+        <div class="container-left">
+            <div class="card">
+                <img src="../img/myicon.jpg" class="avtar" alt="">
+                <h3>Yeln</h3>
+                <a href="https://github.com">github 地址</a>
+                <!-- <div class="counter">
+                    <span>文章</span>
+                    <span>分类</span>
+                </div>
+                <div class="counter">
+                    <span>2</span>
+                    <span>1</span>
+                </div> -->
+            </div>
+        </div>
+        <div class="container-right" id="markdownDisplay"></div>
+    </div>
+    <textarea id="markdownTextArea" style="width: 100%; height: 200px;display:none;">
+# 测试
+<span style="font-size: 0.4em; color: #888;">2025年03月19日 22:12:44</span>
+
+---
+<br>
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+int d(int a,int b)
+{
+    return (!a)|b;
+}
+int f1(int q,int r)
+{
+    return d((q|(!r)),(r|(!q)));
+}
+int f2(int p,int q,int r)
+{
+    return d(d(p,r),(d(d(q,r),d(p|q,r))));
+}
+int f3(int p,int q,int r)
+{
+    return d(d(p,r),r&(!(p|q)));
+}
+int f4(int p,int q,int r)
+{
+    return d(q,!p)|(r|d(p,r));
+}
+int main()
+{
+    for(int i=0;i<=1;i++)
+        for(int j=0;j<=1;j++)
+            for(int k=0;k<=1;k++)
+                cout<<i<<" "<<j<<" "<<k<<" "<<f4(i,j,k)<<endl;
+    return 0;
+}
+```
+###测试公式
+    </textarea>
+    <div id="markdownDisplay"></div>
+    <script>
+        marked.setOptions({
+            breaks: true
+        });
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\$', '\$']]  // 同时启用两种标识
+            }
+        };
+        $(function () {
+            console.log(1);
+            var rawMarkdown = document.getElementById('markdownTextArea').value;
+            var processedHTML = marked.parse(rawMarkdown);
+            console.log(processedHTML);
+            document.getElementById('markdownDisplay').innerHTML = processedHTML;
+            MathJax.typesetPromise([markdownDisplay]).catch((err) => console.error(err));
+        });
+    </script>
+
+</body>
+
+</html>

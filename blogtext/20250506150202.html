@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="..\css\general.css" />
+    <link rel="stylesheet" href="..\node_modules\highlight.js\styles\docco.css" />
+    <link rel="stylesheet" href="..\css\blogtext.css" />
+    <script src="..\node_modules\marked\marked.min.js"></script>
+    <script src="..\node_modules\jquery\dist\jquery.min.js"></script>
+    <script src="..\node_modules\highlight.js\highlight.min.js"></script>
+    <script id="MathJax-script" async src="..\node_modules\mathjax\es5\tex-mml-chtml.js"></script>
+    <title></title>
+</head>
+
+<body>
+    <div class="nav">
+        <img src="../img/nav_icon.avif" class="avtar" alt="">
+        <div id="photo">Yeln</div>
+        <div id="home"><a href="../home.html">主页</a></div>
+        <div id="list"><a href="../list.html">文章</a></div>
+        <div id="about"><a href="../about.html">关于</a></div>
+    </div>
+    <div class="container">
+        <div class="container-left">
+            <div class="card">
+                <img src="../img/myicon.jpg" class="avtar" alt="">
+                <h3>Yeln</h3>
+                <a href="https://github.com">github 地址</a>
+                <!-- <div class="counter">
+                    <span>文章</span>
+                    <span>分类</span>
+                </div>
+                <div class="counter">
+                    <span>2</span>
+                    <span>1</span>
+                </div> -->
+            </div>
+        </div>
+        <div class="container-right" id="markdownDisplay"></div>
+        <button id="edit">编辑</button>
+        <button id="delete">删除</button>
+    </div>
+    <textarea id="markdownTextArea" style="width: 100%; height: 200px;display:none;">
+
+# 2022牛客暑期多校训练营4 A.Task Computing
+<span style="font-size: 0.4em; color: #888;">2025年05月06日 15:02:02</span>
+
+---
+<br>
+
+[比赛链接](https://ac.nowcoder.com/acm/contest/33189 "比赛链接")
+
+比较套路的一道题。首先第一个难点是要决定顺序，感觉贪心就像是能解决的样子。实际和P10747差不多，都是交换法贪心，看看答案序列怎么要不会劣，然后可以对原序列排序，然后照着取就可以，这样就解决了顺序。式子也比较好推。
+
+现在问题来到了如何求出选哪些，因为已经确定顺序了。那么肯定要dp，怎么去dp呢？正着dp明显有后效性，因为p会对后面的w产生贡献，那不好搞。但是反着来，已经知道了w，再选的时候就可以没有后效性了，因为p能贡献的已经处理完了。
+
+```cpp
+/*
+「頼むよ神様、こんな人生だったんだ。
+拜托了，神啊，都已经是这样的人生了……
+せめて一度ぐらい、幸せな梦を见させて」
+至少让我做一次幸福的梦吧……
+*/
+#include<bits/stdc++.h>
+#define int long long
+#define mid ((l+r)>>1)
+using namespace std;
+using ll=long long;
+const int mod=1e9+7;
+const int N=200020;
+
+
+
+struct node{
+    long double p,w;
+    friend bool operator<(node a,node b){
+        return a.w+a.p*b.w/10000>b.w+b.p*a.w/10000;
+    }
+}a[N];
+long double f[N][22];
+int n,m;
+void sol()
+{
+    cin>>n>>m;
+    for(int i=1;i<=n;i++)
+        cin>>a[i].w;
+    for(int i=1;i<=n;i++)
+        cin>>a[i].p;
+    sort(a+1,a+1+n);
+    for(int i=n;i;i--)
+        for(int j=1;j<=m;j++)
+            f[i][j]=max(f[i+1][j],f[i+1][j-1]*a[i].p/10000+a[i].w);
+    cout<<fixed<<setprecision(16)<<f[1][m]<<endl;
+}
+signed main()
+{
+    ios::sync_with_stdio(0);
+    cin.tie(0),cout.tie(0);
+
+    int T=1;
+    while(T--) sol();
+    return 0;
+}
+
+```
+    </textarea>
+    <div id="markdownDisplay"></div>
+    <span id="edit_index">20250506150202</span>
+    <script>
+        marked.setOptions({
+            breaks: true
+        });
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\$', '\$']]  // 同时启用两种标识
+            }
+        };
+        $(function () {
+            // console.log(1);
+            var rawMarkdown = document.getElementById('markdownTextArea').value;
+            var processedHTML = marked.parse(rawMarkdown);
+            // console.log(processedHTML);
+            document.getElementById('markdownDisplay').innerHTML = processedHTML;
+            hljs.highlightAll();
+            MathJax.typesetPromise([markdownDisplay]).catch((err) => console.error(err));
+        });
+    </script>
+    <script src="..\js\blogtext.js"></script>
+</body>
+
+</html>

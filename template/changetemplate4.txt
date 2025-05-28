@@ -1,0 +1,36 @@
+<script src="node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="node_modules/editor.md/editormd.js"></script>
+    <!-- 这两个要手动导入！ -->
+    <script>
+        $(function () {
+            var editor = editormd("editor", {
+                width: "90%",
+                height: 640,
+                saveHTMLToTextarea: true,
+                highlight: true,
+                path: "node_modules/editor.md/lib/",
+                tex: true,
+                toolbar: true
+            });
+            document.getElementById("save").addEventListener('click', async (e) => {
+                e.preventDefault();
+
+                const realtimeMarkdown = editor.getMarkdown();
+                const realtimeHTML = editor.getHTML();
+                const title=document.getElementById("titleEditor").value;
+                const Time=document.getElementById("edit_index").innerHTML;
+                // console.log(realtimeHTML);
+                // console.log(title);
+                const response = await fetch('http://localhost:5500/changeblog', {//liveserver默认端口（当然可以改）
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ realtimeHTML, realtimeMarkdown,title,Time })
+                    // json格式要对!
+                });
+                window.location.href = '../list.html';
+            });
+        });
+    </script>
+</body>
+
+</html>

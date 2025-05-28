@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="..\css\general.css" />
+    <link rel="stylesheet" href="..\css\blogtext.css" />
+    <script src="..\node_modules\marked\marked.min.js"></script>
+    <script src="..\node_modules\jquery\dist\jquery.min.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <title></title>
+</head>
+
+<body>
+    <div class="nav">
+        <img src="../img/nav_icon.avif" class="avtar" alt="">
+        <div id="photo">Yeln</div>
+        <div id="home">home</div>
+        <div id="list">list</div>
+        <div id="about">about</div>
+    </div>
+    <div class="container">
+        <div class="container-left">
+            <div class="card">
+                <img src="../img/myicon.jpg" class="avtar" alt="">
+                <h3>Yeln</h3>
+                <a href="https://github.com">github 地址</a>
+                <!-- <div class="counter">
+                    <span>文章</span>
+                    <span>分类</span>
+                </div>
+                <div class="counter">
+                    <span>2</span>
+                    <span>1</span>
+                </div> -->
+            </div>
+        </div>
+        <div class="container-right" id="markdownDisplay"></div>
+    </div>
+    <textarea id="markdownTextArea" style="width: 100%; height: 200px;display:none;">
+# 无标题
+<span style="font-size: 0.4em; color: #888;">2025年03月19日 22:21:34</span>
+
+---
+<br>
+
+### 测试公式
+958年11月17日，紫竹院公园管理处成立。
+1964年12月20日，紫竹院公园滑冰场对外开放。 [8]
+1979年11月，紫竹院公园新建游船码头竣工。
+1981年4月30日，紫竹院公园揽翠亭改建工程竣工。
+1985年7月14日，紫竹院公园荷花渡景区改造完成。 [8]
+1986年9月，紫竹院公园筠石苑（即竹景园）、紫竹垂钓景区、澄碧山房景区竣工。
+1991年6月，紫竹院公园江南竹韵景区破土动工。
+1992年8月，紫竹院公园江南竹韵景区建成。
+1994年6月18日，紫竹院公园跨海东征雕塑工程竣工。 [8]
+    </textarea>
+    <div id="markdownDisplay"></div>
+    <script>
+        marked.setOptions({
+            breaks: true
+        });
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\$', '\$']]  // 同时启用两种标识
+            }
+        };
+        $(function () {
+            console.log(1);
+            var rawMarkdown = document.getElementById('markdownTextArea').value;
+            var processedHTML = marked.parse(rawMarkdown);
+            console.log(processedHTML);
+            document.getElementById('markdownDisplay').innerHTML = processedHTML;
+            MathJax.typesetPromise([markdownDisplay]).catch((err) => console.error(err));
+        });
+    </script>
+
+</body>
+
+</html>
